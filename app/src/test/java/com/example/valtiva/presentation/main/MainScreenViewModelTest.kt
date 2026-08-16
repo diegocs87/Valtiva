@@ -1,4 +1,4 @@
-package com.example.valtiva.ui.main
+package com.example.valtiva.presentation.main
 
 import com.example.valtiva.data.DataRepository
 import junit.framework.TestCase.assertEquals

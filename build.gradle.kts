@@ -3,4 +3,13 @@ plugins {
   alias(libs.plugins.android.application) apply false
   alias(libs.plugins.compose.compiler) apply false
   alias(libs.plugins.kotlin.serialization) apply false
+  alias(libs.plugins.ksp) apply false
+  alias(libs.plugins.hilt) apply false
+  alias(libs.plugins.room) apply false
+  alias(libs.plugins.detekt) apply false
+  // Firebase plugins: declared here so versions are resolved from the catalog.
+  // They are applied in :app once the Firebase project is connected (google-services.json).
+  alias(libs.plugins.google.services) apply false
+  alias(libs.plugins.firebase.crashlytics) apply false
+  alias(libs.plugins.firebase.perf) apply false
 }

@@ -1,4 +1,4 @@
-package com.example.valtiva.theme
+package com.example.valtiva.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 

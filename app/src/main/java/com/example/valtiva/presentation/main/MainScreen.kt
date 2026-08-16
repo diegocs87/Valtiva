@@ -1,4 +1,4 @@
-package com.example.valtiva.ui.main
+package com.example.valtiva.presentation.main
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
@@ -8,26 +8,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation3.runtime.NavKey
 import com.example.valtiva.data.DefaultDataRepository
-import com.example.valtiva.theme.ValtivaTheme
+import com.example.valtiva.presentation.theme.ValtivaTheme
 
 @Composable
 fun MainScreen(
-  onItemClick: (NavKey) -> Unit,
   modifier: Modifier = Modifier,
   viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(DefaultDataRepository()) },
 ) {
   val state by viewModel.uiState.collectAsStateWithLifecycle()
-  when (state) {
+  when (val uiState = state) {
     MainScreenUiState.Loading -> {
       // Blank
     }
     is MainScreenUiState.Success -> {
-      MainScreen(data = (state as MainScreenUiState.Success).data, modifier = modifier)
+      MainScreen(data = uiState.data, modifier = modifier)
     }
     is MainScreenUiState.Error -> {
-      Text("Error loading data: ${(state as MainScreenUiState.Error).throwable.message}")
+      Text("Error loading data: ${uiState.throwable.message}")
     }
   }
 }
