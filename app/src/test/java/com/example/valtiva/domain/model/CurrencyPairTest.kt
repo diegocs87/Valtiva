@@ -25,4 +25,12 @@ class CurrencyPairTest {
   fun `pairs with the same base and quote are equal`() {
     assertEquals(CurrencyPair(USD, COP), CurrencyPair(USD, COP))
   }
+
+  @Test
+  fun `allows pairing a currency with itself`() {
+    val identity = CurrencyPair(USD, USD)
+
+    assertEquals(USD, identity.base)
+    assertEquals(USD, identity.quote)
+  }
 }

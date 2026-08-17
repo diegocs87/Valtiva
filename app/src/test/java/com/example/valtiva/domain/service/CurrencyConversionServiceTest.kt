@@ -11,6 +11,7 @@ import java.math.BigDecimal
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CurrencyConversionServiceTest {
@@ -113,6 +114,28 @@ class CurrencyConversionServiceTest {
     val result = convertUsdToCop(amount = "7", rate = "1")
 
     assertEquals(MonetaryPrecision.SCALE, result.target.amount.scale())
+  }
+
+  @Test
+  fun `a positive amount worth less than half a cent converts to zero`() {
+    // 100 x 0.0000001 = 0.00001, which rounds away entirely at the documented scale. Dust becoming
+    // zero is a consequence of the rounding strategy, not an error.
+    val result = convertUsdToCop(amount = "100", rate = "0.0000001")
+
+    assertEquals("0.00", result.target.amount.toPlainString())
+  }
+
+  @Test
+  fun `rounds away digits beyond the precision ceiling of the math context`() {
+    // Intermediate arithmetic keeps 34 significant digits. This amount is far past anything a
+    // currency converter will ever see, and it pins down where the configured precision stops.
+    val huge = BigDecimal("123456789012345678901234567890.12")
+    val rate = BigDecimal("1000000.5")
+
+    val result = service.convert(Money(huge, USD), COP, ExchangeRate(USD, COP, rate, RATE_DATE))
+
+    assertEquals("123456850740740185074074018507403900.00", result.target.amount.toPlainString())
+    assertTrue(huge.multiply(rate).compareTo(result.target.amount) != 0)
   }
 
   @Test

@@ -12,6 +12,11 @@ import java.math.BigDecimal
  * Negative amounts are rejected: in this app a [Money] is either an amount the user asked to
  * convert or the result of a conversion, and neither has a meaningful negative value. Should the
  * domain ever model debts or refunds, this rule has to be revisited.
+ *
+ * Beware that equality follows [BigDecimal.equals], which takes the scale into account: `10.0` and
+ * `10.00` are the same number but *not* the same [Money]. Compare with [BigDecimal.compareTo] when
+ * only the numeric value matters. Every amount produced by the domain is scaled through
+ * [MonetaryPrecision], so results returned by the domain are always consistent among themselves.
  */
 data class Money(
   val amount: BigDecimal,

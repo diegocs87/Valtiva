@@ -9,8 +9,9 @@ import java.time.LocalDate
  * Rates are keyed by [Currency] rather than by raw `String` so an invalid or unnormalized code
  * cannot reach the snapshot, and so a lookup cannot silently miss because of letter case.
  *
- * Rate providers do not repeat the base currency inside their payload; [rateFor] still answers for
- * it, because one unit of a currency is always worth exactly one unit of itself.
+ * The base currency must not appear inside [rates]: it is implicit and always worth exactly one, so
+ * an entry for it means the mapping that produced this snapshot is wrong. Providers that do include
+ * the base in their payload have to drop it while mapping. [rateFor] still answers for the base.
  */
 data class ExchangeRateSnapshot(
   val baseCurrency: Currency,
@@ -21,6 +22,10 @@ data class ExchangeRateSnapshot(
     require(rates.values.all { it.signum() > 0 }) {
       "All rates in a snapshot must be strictly positive, but found " +
         "${rates.filterValues { it.signum() <= 0 }}."
+    }
+    require(baseCurrency !in rates) {
+      "A snapshot must not publish a rate for its own base currency (${baseCurrency.code}); " +
+        "the base is implicit and always worth one."
     }
   }
 

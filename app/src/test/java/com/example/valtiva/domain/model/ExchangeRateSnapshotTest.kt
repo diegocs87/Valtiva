@@ -55,4 +55,15 @@ class ExchangeRateSnapshotTest {
     assertNull(empty.rateFor(COP))
     assertEquals(BigDecimal.ONE, empty.rateFor(USD)?.rate)
   }
+
+  @Test
+  fun `rejects a rates map that contains its own base currency`() {
+    // An entry for the base means the mapping that produced the snapshot is wrong: the base is
+    // implicit and always worth one, so a contradictory value must not be ignored silently.
+    val error = assertThrows(IllegalArgumentException::class.java) {
+      ExchangeRateSnapshot(USD, RATE_DATE, mapOf(USD to BigDecimal.ONE, COP to BigDecimal("3980.25")))
+    }
+
+    assertEquals(true, error.message?.contains("own base currency"))
+  }
 }

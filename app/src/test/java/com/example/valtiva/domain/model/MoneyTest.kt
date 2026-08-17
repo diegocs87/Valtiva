@@ -41,4 +41,18 @@ class MoneyTest {
   fun `the same amount in a different currency is a different value`() {
     assertNotEquals(Money(BigDecimal("10"), USD), Money(BigDecimal("10"), COP))
   }
+
+  @Test
+  fun `equality takes the scale of the amount into account`() {
+    // BigDecimal.equals compares the scale as well as the value, and Money is a data class, so two
+    // numerically equal amounts written with a different scale are NOT the same Money. Callers that
+    // only care about the value must compare with compareTo.
+    assertNotEquals(Money(BigDecimal("10.0"), USD), Money(BigDecimal("10.00"), USD))
+    assertEquals(0, BigDecimal("10.0").compareTo(BigDecimal("10.00")))
+  }
+
+  @Test
+  fun `accepts negative zero because it carries no sign`() {
+    assertEquals(0, Money(BigDecimal("-0.00"), USD).amount.signum())
+  }
 }

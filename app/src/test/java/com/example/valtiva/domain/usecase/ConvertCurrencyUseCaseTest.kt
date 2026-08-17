@@ -118,6 +118,29 @@ class ConvertCurrencyUseCaseTest {
   }
 
   @Test
+  fun `fails when the repository answers with a snapshot for another base currency`() {
+    // Guards against a faulty data layer: the rate built from such a snapshot would silently
+    // convert from the wrong currency.
+    val wrongBase = ExchangeRateSnapshot(EUR, RATE_DATE, mapOf(COP to BigDecimal("4300.00")))
+    coEvery { repository.getLatestRates(USD) } returns wrongBase
+
+    val error = assertThrows(IllegalArgumentException::class.java) {
+      runBlocking { convertCurrency(BigDecimal("100"), USD, COP) }
+    }
+
+    assertEquals(true, error.message?.contains("cannot convert"))
+  }
+
+  @Test
+  fun `converts a zero amount through the whole use case`() = runTest {
+    coEvery { repository.getLatestRates(USD) } returns usdSnapshot(COP to "3980.25")
+
+    val result = convertCurrency(BigDecimal.ZERO, USD, COP)
+
+    assertEquals("0.00", result.target.amount.toPlainString())
+  }
+
+  @Test
   fun `converts a currency into itself without needing a published rate`() = runTest {
     coEvery { repository.getLatestRates(USD) } returns usdSnapshot(COP to "3980.25")
 
