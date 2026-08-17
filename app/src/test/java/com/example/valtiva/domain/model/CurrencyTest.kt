@@ -56,6 +56,24 @@ class CurrencyTest {
   }
 
   @Test
+  fun `identity is the ISO code, not the display metadata`() {
+    // The rates endpoint and the local rate tables yield bare codes, while the currencies endpoint
+    // adds a name and a symbol. The same currency has to match across all of them.
+    val bare = Currency.of("USD")
+    val described = Currency.of("USD", "United States Dollar", "\$")
+
+    assertEquals(bare, described)
+    assertEquals(bare.hashCode(), described.hashCode())
+  }
+
+  @Test
+  fun `works as a map key no matter which source built it`() {
+    val rates = mapOf(Currency.of("COP") to "3980.25")
+
+    assertEquals("3980.25", rates[Currency.of("COP", "Colombian Peso", "\$")])
+  }
+
+  @Test
   fun `rejects an empty code before and after normalization`() {
     assertThrows(IllegalArgumentException::class.java) { Currency("") }
     assertThrows(IllegalArgumentException::class.java) { Currency.of("   ") }

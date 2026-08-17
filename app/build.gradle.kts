@@ -132,6 +132,12 @@ dependencies {
   testImplementation(libs.mockk)
   testImplementation(libs.turbine)
   testImplementation(libs.kotlinx.coroutines.test)
+  // Exercises the Retrofit interface and the JSON converter without hitting the network.
+  testImplementation(libs.okhttp.mockwebserver)
+  // Room's builders all require a Context, so DAO tests run on Robolectric instead of an emulator.
+  testImplementation(libs.robolectric)
+  testImplementation(libs.androidx.room.testing)
+  testImplementation(libs.androidx.test.core)
 
   // Instrumented tests
   androidTestImplementation(libs.androidx.test.core)
