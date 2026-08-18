@@ -5,6 +5,7 @@ import com.example.valtiva.domain.model.CurrencyPair
 import com.example.valtiva.domain.model.FavoriteExchange
 import com.example.valtiva.domain.repository.FavoriteExchangeRepository
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
 
 /**
  * Favorites are the user's own preferences: purely local, no remote source and no freshness rules,
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.Flow
  * value is the boundary (consumers keep depending on the domain contract, storage stays swappable),
  * not the logic.
  */
-class FavoriteExchangeRepositoryImpl(
+class FavoriteExchangeRepositoryImpl @Inject constructor(
   private val localDataSource: LocalFavoriteExchangeDataSource,
 ) : FavoriteExchangeRepository {
 

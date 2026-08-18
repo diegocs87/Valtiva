@@ -9,6 +9,7 @@ import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.model.ExchangeRate
 import java.time.LocalDate
 import kotlin.coroutines.cancellation.CancellationException
+import javax.inject.Inject
 
 /**
  * [RemoteExchangeRateDataSource] backed by Frankfurter. DTOs never leave this class.
@@ -16,7 +17,7 @@ import kotlin.coroutines.cancellation.CancellationException
  * Self-rates are dropped here: the provider includes `USD -> USD = 1` when no quote filter is
  * given, and the domain treats a currency's rate against itself as implicit, never as data.
  */
-class FrankfurterExchangeRateDataSource(
+class FrankfurterExchangeRateDataSource @Inject constructor(
   private val api: FrankfurterApi,
 ) : RemoteExchangeRateDataSource {
 
