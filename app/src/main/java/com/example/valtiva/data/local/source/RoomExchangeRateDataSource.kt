@@ -7,6 +7,7 @@ import com.example.valtiva.data.source.LocalExchangeRateDataSource
 import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.model.ExchangeRate
 import java.time.LocalDate
+import javax.inject.Inject
 
 /**
  * [LocalExchangeRateDataSource] backed by Room. Entities never leave this class.
@@ -15,7 +16,7 @@ import java.time.LocalDate
  * transaction, so a batch either lands completely or not at all — no explicit transaction plumbing
  * is needed here.
  */
-class RoomExchangeRateDataSource(
+class RoomExchangeRateDataSource @Inject constructor(
   private val dao: ExchangeRateDao,
 ) : LocalExchangeRateDataSource {
 

@@ -9,6 +9,7 @@ import com.example.valtiva.domain.model.ExchangeRateSnapshot
 import com.example.valtiva.domain.repository.ExchangeRateRepository
 import java.time.Clock
 import java.time.LocalDate
+import javax.inject.Inject
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -36,10 +37,10 @@ import kotlinx.coroutines.sync.withLock
  * [ExchangeRateSyncException] carrying the original cause, which is enough to distinguish offline
  * from server trouble if the UI ever wants to.
  */
-class ExchangeRateRepositoryImpl(
+class ExchangeRateRepositoryImpl @Inject constructor(
   private val localDataSource: LocalExchangeRateDataSource,
   private val remoteDataSource: RemoteExchangeRateDataSource,
-  private val clock: Clock = Clock.systemDefaultZone(),
+  private val clock: Clock,
 ) : ExchangeRateRepository {
 
   private val syncMutex = Mutex()
