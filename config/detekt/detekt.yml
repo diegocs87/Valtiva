@@ -26,4 +26,12 @@ complexity:
   LongMethod:
     ignoreAnnotated: ['Composable']
   LongParameterList:
-    ignoreAnnotated: ['Composable']
+    # A ViewModel's constructor lists one use case per capability the screen has; the count
+    # measures how much the screen does, not how tangled the class is, and there is nothing to
+    # extract because Hilt has to see every dependency.
+    ignoreAnnotated: ['Composable', 'HiltViewModel']
+  TooManyFunctions:
+    # The rule is about the surface a type exposes, and private helpers are the opposite of
+    # surface: splitting one readable function into two named ones should never trip a gate.
+    # The public counts still apply.
+    ignorePrivate: true

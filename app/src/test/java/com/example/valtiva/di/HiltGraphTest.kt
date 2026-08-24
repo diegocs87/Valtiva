@@ -24,9 +24,12 @@ import org.robolectric.annotation.Config
  * Materializes the production Hilt graph end to end.
  *
  * This test exists because Dagger's compile-time validation only covers bindings something actually
- * requests: with no ViewModels yet, a missing provider anywhere under the repositories would
- * compile fine and only explode at runtime. Injecting the deepest consumers here forces the whole
- * chain — repository -> data sources -> DAO/API -> database/Retrofit — to be resolvable for real.
+ * requests: a missing provider anywhere under the repositories would compile fine and only explode
+ * at runtime. Injecting the deepest consumers here forces the whole chain — repository -> data
+ * sources -> DAO/API -> database/Retrofit — to be resolvable for real.
+ *
+ * The ViewModels need no case of their own: `@HiltViewModel` generates a binding that Dagger does
+ * validate at compile time, so a use case it could not build would already fail the build.
  */
 @HiltAndroidTest
 @RunWith(RobolectricTestRunner::class)
