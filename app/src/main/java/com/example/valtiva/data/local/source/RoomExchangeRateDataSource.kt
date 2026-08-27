@@ -23,6 +23,9 @@ class RoomExchangeRateDataSource @Inject constructor(
   override suspend fun getRatesForDate(baseCurrency: Currency, date: LocalDate): List<ExchangeRate> =
     dao.getRatesForDate(baseCurrency.code, date).map { it.toDomain() }
 
+  override suspend fun getLatestRatesPerQuote(baseCurrency: Currency): List<ExchangeRate> =
+    dao.getLatestRatesPerQuote(baseCurrency.code).map { it.toDomain() }
+
   override suspend fun saveRates(rates: List<ExchangeRate>) {
     dao.insertAll(rates.map { it.toEntity() })
   }

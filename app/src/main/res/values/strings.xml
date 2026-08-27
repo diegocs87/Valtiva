@@ -1,3 +1,29 @@
 <resources>
     <string name="app_name">Valtiva</string>
+
+    <string name="converter_title">Currency converter</string>
+    <string name="amount_label">Amount</string>
+    <string name="base_currency_label">From</string>
+    <string name="target_currency_label">To</string>
+    <string name="target_currency_placeholder">Select a currency</string>
+    <string name="swap_currencies_content_description">Swap currencies</string>
+    <string name="convert_button">Convert</string>
+    <string name="refresh_rates_button">Refresh rates</string>
+    <string name="retry_button">Retry</string>
+    <string name="favorite_add_content_description">Add to favorites</string>
+    <string name="favorite_remove_content_description">Remove from favorites</string>
+    <string name="favorites_title">Favorites</string>
+    <string name="favorites_empty">No favorites yet.</string>
+    <string name="favorites_unavailable">Favorites could not be loaded.</string>
+    <string name="favorite_delete_content_description">Delete favorite</string>
+    <string name="conversion_result">%1$s %2$s = %3$s %4$s</string>
+    <string name="conversion_rate">1 %1$s = %2$s %3$s (as of %4$s)</string>
+    <string name="loading_content_description">Loading</string>
+
+    <string name="error_invalid_amount">Enter a valid, non-negative amount.</string>
+    <string name="error_missing_target_currency">Select a target currency first.</string>
+    <string name="error_rate_unavailable">No rate is available for %1$s/%2$s.</string>
+    <string name="error_rates_not_published">Rates for %1$s have not been published yet.</string>
+    <string name="error_rates_unreachable">Could not reach the exchange rate service.</string>
+    <string name="error_unexpected">Something went wrong. Please try again.</string>
 </resources>

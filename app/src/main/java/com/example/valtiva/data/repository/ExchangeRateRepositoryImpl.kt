@@ -20,10 +20,14 @@ import kotlinx.coroutines.sync.withLock
  * operation checks local first and touches the network only when local cannot satisfy the request,
  * so converting 100, 1000 and 2000 USD in a row costs one rate lookup, not three HTTP calls.
  *
- * Freshness is date-based, never clock-delta-based: rates are daily, so "current" means published
- * on today's date. When today's rates are missing and the provider has not published them yet, the
- * caller is told explicitly (a `null`, or an honestly dated snapshot from [refreshLatestRates]) —
- * an older rate is never dressed up as today's.
+ * Freshness is resolved per currency, not per snapshot: the provider does not publish every quote
+ * on the same cadence, so "latest rates for USD" legitimately mixes a quote refreshed minutes ago
+ * with one whose last publication was days earlier. [getLatestRates] and [refreshLatestRates]
+ * therefore report each quote at its own most recent known rate rather than requiring every quote
+ * in the snapshot to share one date; the snapshot's own [ExchangeRateSnapshot.date] is only a label
+ * for "as of the newest information we have," not a claim that every quote inside it is that fresh.
+ * [getRatesForDate] is the one exception, and deliberately so: asking for an exact historical day
+ * must not silently substitute a different day for a quote that was not published on it.
  *
  * A single [Mutex] serializes fetch-and-persist, and the local store is re-checked inside the lock,
  * so concurrent callers that miss the cache at the same time produce one network call, not several.
@@ -46,12 +50,8 @@ class ExchangeRateRepositoryImpl @Inject constructor(
   private val syncMutex = Mutex()
 
   override suspend fun getLatestRates(baseCurrency: Currency): ExchangeRateSnapshot? {
-    val today = LocalDate.now(clock)
-    val local = localDataSource.getRatesForDate(baseCurrency, today)
-    if (local.isNotEmpty()) return snapshotOrNull(baseCurrency, today, local)
-
-    val fetched = syncLatest(baseCurrency, today)
-    return snapshotOrNull(baseCurrency, today, fetched.filter { it.date == today })
+    ensureSyncedToday(baseCurrency)
+    return latestSnapshotOrNull(baseCurrency)
   }
 
   override suspend fun getRatesForDate(baseCurrency: Currency, date: LocalDate): ExchangeRateSnapshot? {
@@ -64,35 +64,36 @@ class ExchangeRateRepositoryImpl @Inject constructor(
   }
 
   override suspend fun refreshLatestRates(baseCurrency: Currency): ExchangeRateSnapshot {
-    val today = LocalDate.now(clock)
-    val rates = syncLatest(baseCurrency, today)
-    val newestDate = rates.maxOfOrNull { it.date }
+    ensureSyncedToday(baseCurrency)
+    return latestSnapshotOrNull(baseCurrency)
       ?: throw ExchangeRateSyncException(
         base = baseCurrency,
         message = "The provider returned no rates at all for ${baseCurrency.code}.",
       )
-    return ExchangeRateSnapshot(
-      baseCurrency = baseCurrency,
-      date = newestDate,
-      rates = rates.filter { it.date == newestDate }.associate { it.quote to it.rate },
-    )
   }
 
   /**
-   * Returns today's rates from the local store, fetching and persisting the provider's latest
-   * batch first when they are missing. The local re-check inside the lock is what makes repeated
-   * and concurrent refreshes idempotent: once today's rates are stored, no further network call
-   * happens that day.
+   * Fetches and persists the provider's latest batch for [baseCurrency] when today's rates are not
+   * stored yet. The local re-check inside the lock is what makes repeated and concurrent calls
+   * idempotent: once today's rates are stored, no further network call happens that day — by either
+   * [getLatestRates] or [refreshLatestRates], which share this same sync.
    */
-  private suspend fun syncLatest(baseCurrency: Currency, today: LocalDate): List<ExchangeRate> =
-    syncMutex.withLock {
-      val local = localDataSource.getRatesForDate(baseCurrency, today)
-      if (local.isNotEmpty()) return@withLock local
+  private suspend fun ensureSyncedToday(baseCurrency: Currency) {
+    val today = LocalDate.now(clock)
+    if (localDataSource.getRatesForDate(baseCurrency, today).isNotEmpty()) return
 
-      val fetched = remoteDataSource.getLatestRates(baseCurrency)
-      localDataSource.saveRates(fetched)
-      fetched
+    syncMutex.withLock {
+      if (localDataSource.getRatesForDate(baseCurrency, today).isNotEmpty()) return@withLock
+      localDataSource.saveRates(remoteDataSource.getLatestRates(baseCurrency))
     }
+  }
+
+  /** Builds a snapshot from each quote's own latest stored rate, or `null` when none is stored. */
+  private suspend fun latestSnapshotOrNull(baseCurrency: Currency): ExchangeRateSnapshot? {
+    val rates = localDataSource.getLatestRatesPerQuote(baseCurrency)
+    val newestDate = rates.maxOfOrNull { it.date } ?: return null
+    return ExchangeRateSnapshot(baseCurrency, newestDate, rates.associate { it.quote to it.rate })
+  }
 
   private fun snapshotOrNull(
     baseCurrency: Currency,

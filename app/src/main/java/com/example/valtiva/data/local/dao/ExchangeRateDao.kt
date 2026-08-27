@@ -49,6 +49,26 @@ interface ExchangeRateDao {
   @Query("SELECT * FROM exchange_rates WHERE base_currency = :base AND date = :date")
   suspend fun getRatesForDate(base: String, date: LocalDate): List<ExchangeRateEntity>
 
+  /**
+   * For [base], the most recent stored rate for *each* quote currency independently.
+   *
+   * Unlike [getLatestRates], which requires every returned row to share the single newest date
+   * stored for the base, this resolves "most recent" per `(base, quote)` pair. A quote whose
+   * provider has not published in a while still comes back with its own last known rate instead
+   * of being dropped because some other currency happened to be refreshed more recently.
+   */
+  @Query(
+    """
+    SELECT * FROM exchange_rates AS er
+    WHERE er.base_currency = :base
+      AND er.date = (
+        SELECT MAX(date) FROM exchange_rates
+        WHERE base_currency = :base AND quote_currency = er.quote_currency
+      )
+    """,
+  )
+  suspend fun getLatestRatesPerQuote(base: String): List<ExchangeRateEntity>
+
   /** A single pair on an exact [date], or `null` when that day was never stored. */
   @Query(
     """

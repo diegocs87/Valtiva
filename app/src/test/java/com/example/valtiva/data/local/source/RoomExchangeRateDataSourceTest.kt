@@ -94,4 +94,25 @@ class RoomExchangeRateDataSourceTest {
 
     assertTrue(dataSource.getRatesForDate(USD, august14).isEmpty())
   }
+
+  @Test
+  fun `getLatestRatesPerQuote returns each quote at its own latest stored date`() = runTest {
+    dataSource.saveRates(
+      listOf(
+        ExchangeRate(USD, COP, BigDecimal("3980.25"), august14),
+        ExchangeRate(USD, EUR, BigDecimal("0.85"), august14),
+        ExchangeRate(USD, EUR, BigDecimal("0.86"), august17), // EUR refreshed later, COP did not
+      ),
+    )
+
+    val latest = dataSource.getLatestRatesPerQuote(USD)
+
+    assertEquals(
+      setOf(
+        ExchangeRate(USD, COP, BigDecimal("3980.25"), august14),
+        ExchangeRate(USD, EUR, BigDecimal("0.86"), august17),
+      ),
+      latest.toSet(),
+    )
+  }
 }
