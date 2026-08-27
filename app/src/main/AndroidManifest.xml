@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Required for the networking layer (Retrofit/OkHttp) and Firebase. -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -13,6 +14,24 @@
         android:supportsRtl="true"
         android:windowSoftInputMode="adjustResize"
         android:theme="@style/Theme.Valtiva">
+
+        <!--
+          ValtivaApplication implements Configuration.Provider to supply the Hilt-aware
+          WorkerFactory, so the default on-startup WorkManagerInitializer must be removed: it
+          would otherwise initialize WorkManager with a plain Configuration before the app gets a
+          chance to hand it the injected one.
+        -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
