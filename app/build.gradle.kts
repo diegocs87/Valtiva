@@ -142,6 +142,9 @@ dependencies {
   // bindings at compile time, and nothing in the app requests the repositories yet.
   testImplementation(libs.hilt.android.testing)
   kspTest(libs.hilt.compiler)
+  // Builds and runs a Worker outside a real WorkManager instance, and lets tests assert on what
+  // was actually enqueued.
+  testImplementation(libs.androidx.work.testing)
 
   // Instrumented tests
   androidTestImplementation(libs.androidx.test.core)

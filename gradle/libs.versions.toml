@@ -90,6 +90,7 @@ okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-intercepto
 
 # WorkManager
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
+androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "workManager" }
 
 # Firebase (versions managed by the BoM)
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
