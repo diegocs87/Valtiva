@@ -71,7 +71,7 @@ class ExchangeRateRepositoryImplTest {
   }
 
   @Test
-  fun `persists everything the provider sent but only returns the rates dated today`() = runTest {
+  fun `persists everything the provider sent and returns every currency at its own latest rate`() = runTest {
     coEvery { remote.getLatestRates(USD) } returns listOf(
       rate(EUR, "0.86539", today),
       rate(COP, "3123.53", friday), // laggard currency: its provider has not published today yet
@@ -79,17 +79,34 @@ class ExchangeRateRepositoryImplTest {
 
     val snapshot = repository.getLatestRates(USD)
 
-    assertEquals(setOf(EUR), snapshot?.rates?.keys)
+    // COP is not dropped for lagging behind EUR; it is included at its own last known rate.
+    assertEquals(setOf(EUR, COP), snapshot?.rates?.keys)
+    assertEquals(BigDecimal("3123.53"), snapshot?.rates?.get(COP))
+    // The snapshot's date labels the newest information available, not every quote's own date.
+    assertEquals(today, snapshot?.date)
     assertEquals(2, local.saved.size)
   }
 
   @Test
-  fun `returns null instead of passing an older rate off as today's`() = runTest {
+  fun `returns the most recent available rate per currency even when nothing was published today`() = runTest {
     coEvery { remote.getLatestRates(USD) } returns listOf(rate(COP, "3123.64", friday))
 
-    assertNull(repository.getLatestRates(USD))
-    // The older rate is still persisted for explicit historical lookups.
-    assertEquals(listOf(friday), local.saved.map { it.date })
+    val snapshot = repository.getLatestRates(USD)
+
+    assertEquals(friday, snapshot?.date)
+    assertEquals(BigDecimal("3123.64"), snapshot?.rates?.get(COP))
+  }
+
+  @Test
+  fun `getLatestRates resolves each quote independently across rates synced on different days`() = runTest {
+    local.saved += rate(EUR, "0.85", friday)
+    coEvery { remote.getLatestRates(USD) } returns listOf(rate(COP, "3123.53", today))
+
+    val snapshot = repository.getLatestRates(USD)
+
+    // EUR was never re-synced today, but its Friday rate is still the best one known for it.
+    assertEquals(setOf(EUR, COP), snapshot?.rates?.keys)
+    assertEquals(today, snapshot?.date)
   }
 
   @Test
@@ -198,6 +215,19 @@ class ExchangeRateRepositoryImplTest {
   }
 
   @Test
+  fun `refresh includes every currency at its own latest rate, not just the newest date`() = runTest {
+    coEvery { remote.getLatestRates(USD) } returns listOf(
+      rate(EUR, "0.86539", today),
+      rate(COP, "3123.53", friday), // laggard currency
+    )
+
+    val snapshot = repository.refreshLatestRates(USD)
+
+    assertEquals(setOf(EUR, COP), snapshot.rates.keys)
+    assertEquals(today, snapshot.date)
+  }
+
+  @Test
   fun `refresh fails loudly when the provider returns nothing at all`() = runTest {
     coEvery { remote.getLatestRates(USD) } returns emptyList()
 
@@ -219,6 +249,11 @@ private class FakeLocalExchangeRateDataSource : LocalExchangeRateDataSource {
 
   override suspend fun getRatesForDate(baseCurrency: Currency, date: LocalDate): List<ExchangeRate> =
     saved.filter { it.base == baseCurrency && it.date == date }
+
+  override suspend fun getLatestRatesPerQuote(baseCurrency: Currency): List<ExchangeRate> =
+    saved.filter { it.base == baseCurrency }
+      .groupBy { it.quote }
+      .map { (_, rates) -> rates.maxBy { it.date } }
 
   override suspend fun saveRates(rates: List<ExchangeRate>) {
     saved += rates

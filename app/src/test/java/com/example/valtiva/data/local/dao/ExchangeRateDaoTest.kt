@@ -110,6 +110,26 @@ class ExchangeRateDaoTest {
   }
 
   @Test
+  fun `getLatestRatesPerQuote resolves each quote's own most recent date independently`() = runTest {
+    dao.insertAll(
+      listOf(
+        rate(quote = "COP", rate = "3980.25", date = august14),
+        rate(quote = "EUR", rate = "0.85", date = august14),
+        rate(quote = "EUR", rate = "0.86", date = august15), // EUR refreshed the next day, COP did not
+      ),
+    )
+
+    val latest = dao.getLatestRatesPerQuote("USD")
+
+    assertEquals(2, latest.size)
+    val cop = latest.single { it.quoteCurrency == "COP" }
+    val eur = latest.single { it.quoteCurrency == "EUR" }
+    assertEquals(august14, cop.date)
+    assertEquals(august15, eur.date)
+    assertEquals(BigDecimal("0.86"), eur.rate)
+  }
+
+  @Test
   fun `re-inserting the same pair and date replaces the stored rate`() = runTest {
     dao.insert(rate(quote = "COP", rate = "3980.25"))
     dao.insert(rate(quote = "COP", rate = "4000.00"))
