@@ -3,9 +3,12 @@
 
     <string name="converter_title">Currency converter</string>
     <string name="amount_label">Amount</string>
-    <string name="base_currency_label">From</string>
-    <string name="target_currency_label">To</string>
-    <string name="target_currency_placeholder">Select a currency</string>
+    <string name="you_send_label">You send</string>
+    <string name="you_receive_label">You receive</string>
+    <string name="receive_placeholder">0.00</string>
+    <string name="base_currency_label">From currency</string>
+    <string name="target_currency_label">To currency</string>
+    <string name="target_currency_placeholder">Select</string>
     <string name="swap_currencies_content_description">Swap currencies</string>
     <string name="convert_button">Convert</string>
     <string name="refresh_rates_button">Refresh rates</string>
@@ -13,12 +16,21 @@
     <string name="favorite_add_content_description">Add to favorites</string>
     <string name="favorite_remove_content_description">Remove from favorites</string>
     <string name="favorites_title">Favorites</string>
-    <string name="favorites_empty">No favorites yet.</string>
+    <string name="favorites_empty">No favorites yet. Add a pair to find it here fast.</string>
     <string name="favorites_unavailable">Favorites could not be loaded.</string>
     <string name="favorite_delete_content_description">Delete favorite</string>
-    <string name="conversion_result">%1$s %2$s = %3$s %4$s</string>
-    <string name="conversion_rate">1 %1$s = %2$s %3$s (as of %4$s)</string>
+    <string name="favorite_hint">Tap to use this pair</string>
+    <string name="rate_line">1 %1$s = %2$s %3$s</string>
+    <string name="daily_rate_label">Daily exchange rate</string>
+    <string name="rate_updated_on">Updated: %1$s</string>
     <string name="loading_content_description">Loading</string>
+
+    <string name="destination_converter">Converter</string>
+    <string name="destination_favorites">Favorites</string>
+    <string name="destination_history">History</string>
+    <string name="destination_settings">Settings</string>
+    <string name="section_not_built_title">Coming soon</string>
+    <string name="section_not_built_message">%1$s is not built yet. Everything the app can do today lives in the Converter tab.</string>
 
     <string name="error_invalid_amount">Enter a valid, non-negative amount.</string>
     <string name="error_missing_target_currency">Select a target currency first.</string>
