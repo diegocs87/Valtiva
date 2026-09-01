@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Sampled from the Valtiva logo/splash artwork provided in the project. -->
+    <color name="valtiva_navy">#020E1C</color>
+    <color name="valtiva_blue">#004BF7</color>
+    <color name="valtiva_green">#00BE78</color>
+</resources>

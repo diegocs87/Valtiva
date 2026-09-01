@@ -2,4 +2,15 @@
 <resources>
 
     <style name="Theme.Valtiva" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!--
+      Shown at cold start via androidx.core.splashscreen (SplashScreen API, back-ported to
+      minSdk). MainActivity installs it with installSplashScreen() and it hands off to
+      Theme.Valtiva right after, so the app theme above is unaffected.
+    -->
+    <style name="Theme.Valtiva.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/valtiva_navy</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Valtiva</item>
+    </style>
 </resources>
