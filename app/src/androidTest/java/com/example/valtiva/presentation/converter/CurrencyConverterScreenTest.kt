@@ -2,6 +2,7 @@ package com.example.valtiva.presentation.converter
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -47,7 +48,7 @@ class CurrencyConverterScreenTest {
       onEvent = { lastEvent = it },
     )
 
-    composeTestRule.onNodeWithText("Amount").performTextInput("100")
+    composeTestRule.onNodeWithContentDescription("Amount").performTextInput("100")
 
     assert(lastEvent == CurrencyConverterUiEvent.AmountChanged("100"))
   }
@@ -82,7 +83,8 @@ class CurrencyConverterScreenTest {
       ),
     )
 
-    composeTestRule.onNodeWithText("100 USD = 398000 COP").assertExists()
+    composeTestRule.onNodeWithText("398,000.00").assertExists()
+    composeTestRule.onNodeWithText("1 USD = 3,980.00 COP").assertExists()
   }
 
   @Test

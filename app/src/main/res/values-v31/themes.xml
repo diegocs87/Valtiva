@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!--
+      Only the icon + background are set here (see themes.xml for why: the system's
+      windowSplashScreenBrandingImage slot stretched the wordmark/slogan on real devices).
+      Repeats the base items because a same-named style in a qualified folder replaces the
+      base definition entirely on matching devices rather than merging with it.
+    -->
+    <style name="Theme.Valtiva.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/valtiva_navy</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Valtiva</item>
+    </style>
+</resources>
