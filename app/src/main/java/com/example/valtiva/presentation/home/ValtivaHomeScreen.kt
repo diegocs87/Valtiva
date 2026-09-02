@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.example.valtiva.presentation.converter.CurrencyConverterRoute
+import com.example.valtiva.presentation.favorites.FavoritesRoute
 import com.example.valtiva.presentation.navigation.ValtivaBottomBar
 import com.example.valtiva.presentation.navigation.ValtivaDestination
 import kotlinx.coroutines.launch
@@ -56,6 +57,7 @@ fun ValtivaHomeScreen(modifier: Modifier = Modifier) {
     ) { page ->
       when (val destination = destinations[page]) {
         ValtivaDestination.CONVERTER -> CurrencyConverterRoute(modifier = Modifier.fillMaxSize())
+        ValtivaDestination.FAVORITES -> FavoritesRoute(modifier = Modifier.fillMaxSize())
         else -> SectionNotBuiltScreen(destination = destination)
       }
     }
