@@ -17,10 +17,10 @@ import com.example.valtiva.R
  * The nested [com.example.valtiva.presentation.navigation.MainRoute] graph still owns the app's real
  * navigation; this only orders the tabs.
  *
- * [CONVERTER] is the only section with a screen behind it today. The rest are declared here because
- * the bottom bar is part of this iteration's design, and a bar with one item is not one — they
- * render an explicit "not built yet" page rather than a plausible-looking empty state that would
- * read as a feature that is merely out of data.
+ * [CONVERTER] and [FAVORITES] are the only sections with a screen behind them today. The rest are
+ * declared here because the bottom bar is part of this iteration's design, and a bar with two items
+ * is not one — they render an explicit "not built yet" page rather than a plausible-looking empty
+ * state that would read as a feature that is merely out of data.
  */
 enum class ValtivaDestination(
   @param:StringRes val labelRes: Int,
