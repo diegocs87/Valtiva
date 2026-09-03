@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.valtiva.domain.exception.ExchangeRateSyncException
 import com.example.valtiva.domain.exception.ExchangeRateUnavailableException
+import com.example.valtiva.domain.model.ConversionResult
 import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.model.CurrencyPair
 import com.example.valtiva.domain.model.ExchangeRateSnapshot
@@ -15,6 +16,7 @@ import com.example.valtiva.domain.usecase.GetFavoriteExchangesUseCase
 import com.example.valtiva.domain.usecase.GetLatestRatesUseCase
 import com.example.valtiva.domain.usecase.RefreshRatesUseCase
 import com.example.valtiva.domain.usecase.RemoveFavoriteExchangeUseCase
+import com.example.valtiva.domain.usecase.SaveConversionHistoryUseCase
 import com.example.valtiva.presentation.converter.CurrencyConverterUiEvent.AmountChanged
 import com.example.valtiva.presentation.converter.CurrencyConverterUiEvent.BaseCurrencySelected
 import com.example.valtiva.presentation.converter.CurrencyConverterUiEvent.ConvertClicked
@@ -76,6 +78,8 @@ class CurrencyConverterViewModel @Inject constructor(
   private val getFavoriteExchanges: GetFavoriteExchangesUseCase,
   private val addFavoriteExchange: AddFavoriteExchangeUseCase,
   private val removeFavoriteExchange: RemoveFavoriteExchangeUseCase,
+  private val saveConversionHistory: SaveConversionHistoryUseCase,
+  private val converterHandoffReceiver: ConverterHandoffReceiver,
   private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -89,6 +93,7 @@ class CurrencyConverterViewModel @Inject constructor(
 
   init {
     observeFavorites()
+    observePendingConversion()
     loadRates { base -> getLatestRates(base) }
   }
 
@@ -195,7 +200,9 @@ class CurrencyConverterViewModel @Inject constructor(
       _uiState.update { it.copy(status = CurrencyConverterUiStatus.Loading) }
 
       val status = statusFor(RetryOperation.CONVERT) {
-        CurrencyConverterUiStatus.Success(convertCurrency(amount, requested.baseCurrency, target))
+        val result = convertCurrency(amount, requested.baseCurrency, target)
+        recordHistory(result)
+        CurrencyConverterUiStatus.Success(result)
       }
       _uiState.update { current ->
         // The form may have moved on while the use case was running; an answer to the previous
@@ -211,6 +218,25 @@ class CurrencyConverterViewModel @Inject constructor(
 
   private fun CurrencyConverterUiState.describesSameConversionAs(other: CurrencyConverterUiState): Boolean =
     amount == other.amount && baseCurrency == other.baseCurrency && targetCurrency == other.targetCurrency
+
+  /**
+   * Records a conversion that just succeeded, once it has already happened — a failure here must
+   * never turn a conversion the user did get into one they are told failed.
+   *
+   * Deliberately swallowed rather than routed through [statusFor]: that wrapper would fold this
+   * failure into the very [CurrencyConverterUiStatus] [convert] is about to publish, which would
+   * report the conversion itself as broken over what is really a history-logging problem.
+   */
+  @Suppress("TooGenericExceptionCaught", "SwallowedException")
+  private suspend fun recordHistory(conversion: ConversionResult) {
+    try {
+      saveConversionHistory(conversion)
+    } catch (cancellation: CancellationException) {
+      throw cancellation
+    } catch (failure: Exception) {
+      // Best-effort: the conversion on screen is correct regardless of whether it got logged.
+    }
+  }
 
   /**
    * Reads the typed text as an amount, or returns `null` when it is not one.
@@ -274,6 +300,33 @@ class CurrencyConverterViewModel @Inject constructor(
       }
       _uiState.update { it.copy(status = status) }
     }
+  }
+
+  // ---------------------------------------------------------------------------------------------
+  // History hand-off
+  // ---------------------------------------------------------------------------------------------
+
+  /**
+   * Applies a conversion another screen (History today) asked to load, for as long as this screen
+   * lives — the same lifetime [observeFavorites] uses, and for the same reason: this ViewModel is
+   * the only thing that knows when it is safe to hand the form a new pair.
+   */
+  private fun observePendingConversion() {
+    viewModelScope.launch {
+      converterHandoffReceiver.pendingConversion.collect { pending -> applyPendingConversion(pending) }
+    }
+  }
+
+  /**
+   * Loads [pending] onto the form exactly as if the user had typed the amount and picked the
+   * currencies themselves, by reusing [onAmountChanged] and [onCurrenciesSelected] rather than
+   * writing a parallel state transition. This is also what keeps the historical rate out of the
+   * picture: only the amount and the currencies move over, so producing a result still means
+   * running [convert] through [ConvertCurrencyUseCase] against whatever rate is current now.
+   */
+  private fun applyPendingConversion(pending: PendingConversion) {
+    onAmountChanged(pending.amount)
+    onCurrenciesSelected(pending.baseCurrency, pending.targetCurrency)
   }
 
   // ---------------------------------------------------------------------------------------------

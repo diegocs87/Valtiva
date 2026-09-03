@@ -18,6 +18,7 @@ import com.example.valtiva.domain.usecase.GetFavoriteExchangesUseCase
 import com.example.valtiva.domain.usecase.GetLatestRatesUseCase
 import com.example.valtiva.domain.usecase.RefreshRatesUseCase
 import com.example.valtiva.domain.usecase.RemoveFavoriteExchangeUseCase
+import com.example.valtiva.domain.usecase.SaveConversionHistoryUseCase
 import com.example.valtiva.presentation.MainDispatcherRule
 import io.mockk.Runs
 import io.mockk.coEvery
@@ -27,6 +28,7 @@ import io.mockk.just
 import io.mockk.mockk
 import java.math.BigDecimal
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
@@ -57,8 +59,11 @@ class CurrencyConverterViewModelTest {
   private val getFavoriteExchanges = mockk<GetFavoriteExchangesUseCase>()
   private val addFavoriteExchange = mockk<AddFavoriteExchangeUseCase>()
   private val removeFavoriteExchange = mockk<RemoveFavoriteExchangeUseCase>()
+  private val saveConversionHistory = mockk<SaveConversionHistoryUseCase>()
+  private val converterHandoffReceiver = mockk<ConverterHandoffReceiver>()
 
   private val favorites = MutableStateFlow<List<FavoriteExchange>>(emptyList())
+  private val pendingConversions = MutableSharedFlow<PendingConversion>()
 
   private val usdSnapshot = ExchangeRateSnapshot(
     baseCurrency = USD,
@@ -80,6 +85,8 @@ class CurrencyConverterViewModelTest {
     coEvery { refreshRates(any()) } returns usdSnapshot
     coEvery { addFavoriteExchange(any()) } just Runs
     coEvery { removeFavoriteExchange(any()) } just Runs
+    coEvery { saveConversionHistory(any()) } just Runs
+    every { converterHandoffReceiver.pendingConversion } returns pendingConversions
   }
 
   private fun viewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()) =
@@ -90,6 +97,8 @@ class CurrencyConverterViewModelTest {
       getFavoriteExchanges = getFavoriteExchanges,
       addFavoriteExchange = addFavoriteExchange,
       removeFavoriteExchange = removeFavoriteExchange,
+      saveConversionHistory = saveConversionHistory,
+      converterHandoffReceiver = converterHandoffReceiver,
       savedStateHandle = savedStateHandle,
     )
 
@@ -522,6 +531,84 @@ class CurrencyConverterViewModelTest {
     assertEquals(listOf(COP, EUR, USD), state.availableCurrencies)
   }
 
+
+  // -------------------------------------------------------------------------------------------
+  // History
+  // -------------------------------------------------------------------------------------------
+
+  @Test
+  fun `records a successful conversion to history`() = runTest {
+    convertedViewModel()
+
+    coVerify(exactly = 1) { saveConversionHistory(usdToCop) }
+  }
+
+  @Test
+  fun `never records a conversion that failed`() = runTest {
+    coEvery { convertCurrency(any(), any(), any()) } throws ExchangeRateUnavailableException(USD, COP)
+    val viewModel = viewModel()
+    viewModel.onEvent(CurrencyConverterUiEvent.AmountChanged("100"))
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ConvertClicked)
+
+    coVerify(exactly = 0) { saveConversionHistory(any()) }
+  }
+
+  @Test
+  fun `a failure to record history does not turn a successful conversion into an error`() = runTest {
+    coEvery { saveConversionHistory(any()) } throws IllegalStateException("disk is full")
+
+    val viewModel = convertedViewModel()
+
+    assertEquals(CurrencyConverterUiStatus.Success(usdToCop), viewModel.uiState.value.status)
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // Set as current (hand-off from History)
+  // -------------------------------------------------------------------------------------------
+
+  @Test
+  fun `applies a conversion handed off from another screen to the form`() = runTest {
+    val viewModel = viewModel()
+
+    pendingConversions.emit(PendingConversion("250.50", EUR, COP))
+
+    assertEquals("250.50", viewModel.uiState.value.amount)
+    assertEquals(EUR, viewModel.uiState.value.baseCurrency)
+    assertEquals(COP, viewModel.uiState.value.targetCurrency)
+  }
+
+  @Test
+  fun `a hand-off clears whatever the form was previously showing`() = runTest {
+    val viewModel = convertedViewModel()
+    assertEquals(usdToCop, viewModel.uiState.value.conversion)
+
+    pendingConversions.emit(PendingConversion("250.50", EUR, COP))
+
+    assertNull(viewModel.uiState.value.conversion)
+    assertEquals(CurrencyConverterUiStatus.Idle, viewModel.uiState.value.status)
+  }
+
+  @Test
+  fun `a hand-off does not run a conversion on its own`() = runTest {
+    viewModel()
+
+    pendingConversions.emit(PendingConversion("250.50", EUR, COP))
+
+    coVerify(exactly = 0) { convertCurrency(any(), any(), any()) }
+  }
+
+  @Test
+  fun `converting after a hand-off asks for the current rate, never the historical one`() = runTest {
+    coEvery { convertCurrency(BigDecimal("250.50"), EUR, COP) } returns usdToCop
+    val viewModel = viewModel()
+    pendingConversions.emit(PendingConversion("250.50", EUR, COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ConvertClicked)
+
+    coVerify(exactly = 1) { convertCurrency(BigDecimal("250.50"), EUR, COP) }
+  }
 
   // -------------------------------------------------------------------------------------------
   // State restoration

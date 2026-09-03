@@ -25,6 +25,14 @@
     <string name="rate_updated_on">Updated: %1$s</string>
     <string name="loading_content_description">Loading</string>
 
+    <string name="history_title">History</string>
+    <string name="history_pair_line">%1$s %2$s → %3$s</string>
+    <string name="history_rate_label">Rate: %1$s</string>
+    <string name="history_empty_title">No conversions yet</string>
+    <string name="history_empty_message">Make your first conversion to see it here.</string>
+    <string name="history_unavailable">History could not be loaded.</string>
+    <string name="set_as_current_button">Set as current</string>
+
     <string name="destination_converter">Converter</string>
     <string name="destination_favorites">Favorites</string>
     <string name="destination_history">History</string>

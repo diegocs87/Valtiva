@@ -3,9 +3,11 @@ package com.example.valtiva.di
 import android.content.Context
 import androidx.room.Room
 import com.example.valtiva.data.local.ValtivaDatabase
+import com.example.valtiva.data.local.dao.ConversionHistoryDao
 import com.example.valtiva.data.local.dao.CurrencyDao
 import com.example.valtiva.data.local.dao.ExchangeRateDao
 import com.example.valtiva.data.local.dao.FavoriteExchangeDao
+import com.example.valtiva.data.local.migration.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -32,7 +34,9 @@ object DatabaseModule {
   @Provides
   @Singleton
   fun provideDatabase(@ApplicationContext context: Context): ValtivaDatabase =
-    Room.databaseBuilder(context, ValtivaDatabase::class.java, DATABASE_NAME).build()
+    Room.databaseBuilder(context, ValtivaDatabase::class.java, DATABASE_NAME)
+      .addMigrations(MIGRATION_1_2)
+      .build()
 
   @Provides
   fun provideExchangeRateDao(database: ValtivaDatabase): ExchangeRateDao =
@@ -45,4 +49,8 @@ object DatabaseModule {
   @Provides
   fun provideCurrencyDao(database: ValtivaDatabase): CurrencyDao =
     database.currencyDao()
+
+  @Provides
+  fun provideConversionHistoryDao(database: ValtivaDatabase): ConversionHistoryDao =
+    database.conversionHistoryDao()
 }

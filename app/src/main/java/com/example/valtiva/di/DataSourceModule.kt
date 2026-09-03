@@ -1,8 +1,10 @@
 package com.example.valtiva.di
 
+import com.example.valtiva.data.local.source.RoomConversionHistoryDataSource
 import com.example.valtiva.data.local.source.RoomExchangeRateDataSource
 import com.example.valtiva.data.local.source.RoomFavoriteExchangeDataSource
 import com.example.valtiva.data.remote.source.FrankfurterExchangeRateDataSource
+import com.example.valtiva.data.source.LocalConversionHistoryDataSource
 import com.example.valtiva.data.source.LocalExchangeRateDataSource
 import com.example.valtiva.data.source.LocalFavoriteExchangeDataSource
 import com.example.valtiva.data.source.RemoteExchangeRateDataSource
@@ -38,4 +40,9 @@ abstract class DataSourceModule {
   abstract fun bindLocalFavoriteExchangeDataSource(
     implementation: RoomFavoriteExchangeDataSource,
   ): LocalFavoriteExchangeDataSource
+
+  @Binds
+  abstract fun bindLocalConversionHistoryDataSource(
+    implementation: RoomConversionHistoryDataSource,
+  ): LocalConversionHistoryDataSource
 }
