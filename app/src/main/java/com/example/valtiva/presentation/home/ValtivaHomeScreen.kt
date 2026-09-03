@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import com.example.valtiva.presentation.converter.CurrencyConverterRoute
 import com.example.valtiva.presentation.favorites.FavoritesRoute
+import com.example.valtiva.presentation.history.HistoryRoute
 import com.example.valtiva.presentation.navigation.ValtivaBottomBar
 import com.example.valtiva.presentation.navigation.ValtivaDestination
 import kotlinx.coroutines.launch
@@ -58,6 +59,15 @@ fun ValtivaHomeScreen(modifier: Modifier = Modifier) {
       when (val destination = destinations[page]) {
         ValtivaDestination.CONVERTER -> CurrencyConverterRoute(modifier = Modifier.fillMaxSize())
         ValtivaDestination.FAVORITES -> FavoritesRoute(modifier = Modifier.fillMaxSize())
+        ValtivaDestination.HISTORY -> HistoryRoute(
+          modifier = Modifier.fillMaxSize(),
+          // "Set as current" hands the conversion to the converter's ViewModel on its own (see
+          // ConverterHandoffPublisher/Receiver); this callback only brings that tab into view, which
+          // is the pager's job, not the history feature's.
+          onConversionSelected = {
+            scope.launch { pagerState.animateScrollToPage(destinations.indexOf(ValtivaDestination.CONVERTER)) }
+          },
+        )
         else -> SectionNotBuiltScreen(destination = destination)
       }
     }

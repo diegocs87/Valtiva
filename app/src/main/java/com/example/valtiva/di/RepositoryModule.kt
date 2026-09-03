@@ -1,7 +1,9 @@
 package com.example.valtiva.di
 
+import com.example.valtiva.data.repository.ConversionHistoryRepositoryImpl
 import com.example.valtiva.data.repository.ExchangeRateRepositoryImpl
 import com.example.valtiva.data.repository.FavoriteExchangeRepositoryImpl
+import com.example.valtiva.domain.repository.ConversionHistoryRepository
 import com.example.valtiva.domain.repository.ExchangeRateRepository
 import com.example.valtiva.domain.repository.FavoriteExchangeRepository
 import dagger.Binds
@@ -20,8 +22,8 @@ import javax.inject.Singleton
  * mutex, and a mutex only serializes callers that share the instance. Two instances would mean two
  * locks and duplicate network calls under concurrency.
  *
- * [FavoriteExchangeRepositoryImpl] is unscoped: it is a stateless pass-through, so nothing is
- * gained by pinning one instance.
+ * [FavoriteExchangeRepositoryImpl] and [ConversionHistoryRepositoryImpl] are unscoped: both are
+ * stateless pass-throughs, so nothing is gained by pinning one instance.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -37,6 +39,11 @@ abstract class RepositoryModule {
   abstract fun bindFavoriteExchangeRepository(
     implementation: FavoriteExchangeRepositoryImpl,
   ): FavoriteExchangeRepository
+
+  @Binds
+  abstract fun bindConversionHistoryRepository(
+    implementation: ConversionHistoryRepositoryImpl,
+  ): ConversionHistoryRepository
 
   companion object {
 

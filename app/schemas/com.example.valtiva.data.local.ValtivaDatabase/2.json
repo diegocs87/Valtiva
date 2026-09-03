@@ -1,0 +1,165 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "e886a7d3d26283ad99e818ab2c704408",
+    "entities": [
+      {
+        "tableName": "exchange_rates",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`base_currency` TEXT NOT NULL, `quote_currency` TEXT NOT NULL, `rate` TEXT NOT NULL, `date` TEXT NOT NULL, PRIMARY KEY(`base_currency`, `quote_currency`, `date`))",
+        "fields": [
+          {
+            "fieldPath": "baseCurrency",
+            "columnName": "base_currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteCurrency",
+            "columnName": "quote_currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rate",
+            "columnName": "rate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "date",
+            "columnName": "date",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "base_currency",
+            "quote_currency",
+            "date"
+          ]
+        }
+      },
+      {
+        "tableName": "favorite_exchanges",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`base_currency` TEXT NOT NULL, `quote_currency` TEXT NOT NULL, PRIMARY KEY(`base_currency`, `quote_currency`))",
+        "fields": [
+          {
+            "fieldPath": "baseCurrency",
+            "columnName": "base_currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteCurrency",
+            "columnName": "quote_currency",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "base_currency",
+            "quote_currency"
+          ]
+        }
+      },
+      {
+        "tableName": "currencies",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`code` TEXT NOT NULL, `name` TEXT NOT NULL, `symbol` TEXT, PRIMARY KEY(`code`))",
+        "fields": [
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "symbol",
+            "columnName": "symbol",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "code"
+          ]
+        }
+      },
+      {
+        "tableName": "conversion_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `source_amount` TEXT NOT NULL, `base_currency` TEXT NOT NULL, `target_amount` TEXT NOT NULL, `quote_currency` TEXT NOT NULL, `rate` TEXT NOT NULL, `rate_date` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceAmount",
+            "columnName": "source_amount",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "baseCurrency",
+            "columnName": "base_currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetAmount",
+            "columnName": "target_amount",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quoteCurrency",
+            "columnName": "quote_currency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rate",
+            "columnName": "rate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "rateDate",
+            "columnName": "rate_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e886a7d3d26283ad99e818ab2c704408')"
+    ]
+  }
+}

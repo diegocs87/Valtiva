@@ -1,19 +1,23 @@
 package com.example.valtiva.di
 
+import com.example.valtiva.domain.repository.ConversionHistoryRepository
 import com.example.valtiva.domain.repository.ExchangeRateRepository
 import com.example.valtiva.domain.repository.FavoriteExchangeRepository
 import com.example.valtiva.domain.service.CurrencyConversionService
 import com.example.valtiva.domain.usecase.AddFavoriteExchangeUseCase
 import com.example.valtiva.domain.usecase.ConvertCurrencyUseCase
+import com.example.valtiva.domain.usecase.GetConversionHistoryUseCase
 import com.example.valtiva.domain.usecase.GetFavoriteExchangesUseCase
 import com.example.valtiva.domain.usecase.GetHistoricalRatesUseCase
 import com.example.valtiva.domain.usecase.GetLatestRatesUseCase
 import com.example.valtiva.domain.usecase.RefreshRatesUseCase
 import com.example.valtiva.domain.usecase.RemoveFavoriteExchangeUseCase
+import com.example.valtiva.domain.usecase.SaveConversionHistoryUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import java.time.Clock
 
 /**
  * Provides the domain use cases and the domain service.
@@ -68,4 +72,15 @@ object UseCaseModule {
   fun provideRemoveFavoriteExchangeUseCase(
     favoriteExchangeRepository: FavoriteExchangeRepository,
   ): RemoveFavoriteExchangeUseCase = RemoveFavoriteExchangeUseCase(favoriteExchangeRepository)
+
+  @Provides
+  fun provideGetConversionHistoryUseCase(
+    conversionHistoryRepository: ConversionHistoryRepository,
+  ): GetConversionHistoryUseCase = GetConversionHistoryUseCase(conversionHistoryRepository)
+
+  @Provides
+  fun provideSaveConversionHistoryUseCase(
+    conversionHistoryRepository: ConversionHistoryRepository,
+    clock: Clock,
+  ): SaveConversionHistoryUseCase = SaveConversionHistoryUseCase(conversionHistoryRepository, clock)
 }
