@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,7 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.valtiva.domain.model.ThemeMode
 import com.example.valtiva.presentation.navigation.ValtivaNavHost
+import com.example.valtiva.presentation.theme.ThemeViewModel
 import com.example.valtiva.presentation.theme.ValtivaTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -33,7 +38,10 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
-      ValtivaTheme {
+      val themeViewModel: ThemeViewModel = hiltViewModel()
+      val themeMode by themeViewModel.themeMode.collectAsStateWithLifecycle()
+
+      ValtivaTheme(darkTheme = themeMode.resolveDarkTheme()) {
         Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
           var showBrandedSplash by remember { mutableStateOf(true) }
           LaunchedEffect(Unit) {
@@ -66,4 +74,12 @@ private fun BrandedSplash() {
     contentScale = ContentScale.Crop,
     modifier = Modifier.fillMaxSize(),
   )
+}
+
+/** [ThemeMode.SYSTEM] defers to the OS setting; [ThemeMode.LIGHT]/[ThemeMode.DARK] override it. */
+@Composable
+private fun ThemeMode.resolveDarkTheme(): Boolean = when (this) {
+  ThemeMode.LIGHT -> false
+  ThemeMode.DARK -> true
+  ThemeMode.SYSTEM -> isSystemInDarkTheme()
 }

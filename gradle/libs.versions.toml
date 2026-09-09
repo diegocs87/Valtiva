@@ -17,6 +17,7 @@ room = "2.8.4"
 coroutines = "1.11.0"
 kotlinxSerializationJson = "1.11.0"
 workManager = "2.11.2"
+datastore = "1.1.7"
 
 # Dependency injection
 hilt = "2.60.1"
@@ -94,6 +95,9 @@ okhttp-logging-interceptor = { module = "com.squareup.okhttp3:logging-intercepto
 # WorkManager
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workManager" }
 androidx-work-testing = { module = "androidx.work:work-testing", version.ref = "workManager" }
+
+# DataStore
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 
 # Firebase (versions managed by the BoM)
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }

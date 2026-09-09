@@ -15,6 +15,7 @@ import com.example.valtiva.presentation.favorites.FavoritesRoute
 import com.example.valtiva.presentation.history.HistoryRoute
 import com.example.valtiva.presentation.navigation.ValtivaBottomBar
 import com.example.valtiva.presentation.navigation.ValtivaDestination
+import com.example.valtiva.presentation.settings.SettingsRoute
 import kotlinx.coroutines.launch
 
 /**
@@ -56,7 +57,7 @@ fun ValtivaHomeScreen(modifier: Modifier = Modifier) {
         .fillMaxSize()
         .padding(contentPadding),
     ) { page ->
-      when (val destination = destinations[page]) {
+      when (destinations[page]) {
         ValtivaDestination.CONVERTER -> CurrencyConverterRoute(modifier = Modifier.fillMaxSize())
         ValtivaDestination.FAVORITES -> FavoritesRoute(modifier = Modifier.fillMaxSize())
         ValtivaDestination.HISTORY -> HistoryRoute(
@@ -68,7 +69,7 @@ fun ValtivaHomeScreen(modifier: Modifier = Modifier) {
             scope.launch { pagerState.animateScrollToPage(destinations.indexOf(ValtivaDestination.CONVERTER)) }
           },
         )
-        else -> SectionNotBuiltScreen(destination = destination)
+        ValtivaDestination.SETTINGS -> SettingsRoute(modifier = Modifier.fillMaxSize())
       }
     }
   }

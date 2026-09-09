@@ -16,10 +16,6 @@ import com.example.valtiva.R
  * destinations that go on a back stack, so there is nothing to serialize and nothing to navigate to.
  * The nested [com.example.valtiva.presentation.navigation.MainRoute] graph still owns the app's real
  * navigation; this only orders the tabs.
- *
- * [SETTINGS] is the only section with no screen behind it yet; it renders an explicit "not built
- * yet" page rather than a plausible-looking empty state that would read as a feature that is merely
- * out of data.
  */
 enum class ValtivaDestination(
   @param:StringRes val labelRes: Int,
