@@ -9,6 +9,9 @@
     <string name="base_currency_label">From currency</string>
     <string name="target_currency_label">To currency</string>
     <string name="target_currency_placeholder">Select</string>
+    <string name="currency_search_placeholder">Buscar por código o nombre</string>
+    <string name="currency_search_clear_content_description">Borrar búsqueda</string>
+    <string name="currency_search_no_results">No se encontraron monedas</string>
     <string name="swap_currencies_content_description">Swap currencies</string>
     <string name="convert_button">Convert</string>
     <string name="refresh_rates_button">Refresh rates</string>

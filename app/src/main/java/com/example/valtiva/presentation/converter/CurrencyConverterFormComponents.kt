@@ -15,8 +15,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.outlined.StarBorder
@@ -30,6 +32,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -110,6 +113,13 @@ fun AmountDisplay(amount: String?, modifier: Modifier = Modifier) {
  * user does on this screen, so the chip carries a full-size flag and a comfortable touch target.
  * Each entry in the dropdown pairs the code with [Currency.displayName], since a list of bare codes
  * is only readable to someone who already knows which one they want.
+ *
+ * The dropdown opens with a search field on top so a long catalogue stays usable: typing narrows
+ * [currencies] to whatever [filterByQuery] keeps, by code (`COP`) or by name (`Colombian Peso`). The
+ * query is local to this one dropdown instance — it is not hoisted, for the same reason [expanded]
+ * is not: neither is state any other part of the screen needs to read or survive the popup closing,
+ * so keeping it here is the single source of truth for it rather than a duplicate of one. It is
+ * cleared on every close so the next time this chip opens, it opens showing the full list again.
  */
 @Composable
 fun CurrencySelectorChip(
@@ -121,7 +131,13 @@ fun CurrencySelectorChip(
   enabled: Boolean = true,
 ) {
   var expanded by remember { mutableStateOf(false) }
+  var query by remember { mutableStateOf("") }
   val chipDescription = "$contentDescriptionLabel: ${selected?.code ?: "none selected"}"
+
+  fun close() {
+    expanded = false
+    query = ""
+  }
 
   Row(
     verticalAlignment = Alignment.CenterVertically,
@@ -152,18 +168,64 @@ fun CurrencySelectorChip(
     )
   }
 
-  DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-    currencies.forEach { currency ->
+  DropdownMenu(expanded = expanded, onDismissRequest = { close() }) {
+    val filteredCurrencies = remember(currencies, query) { currencies.filterByQuery(query) }
+
+    CurrencySearchField(
+      query = query,
+      onQueryChanged = { query = it },
+      modifier = Modifier.padding(horizontal = Dimens.SpaceMd, vertical = Dimens.SpaceXs),
+    )
+
+    if (filteredCurrencies.isEmpty()) {
+      Text(
+        text = stringResource(R.string.currency_search_no_results),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(horizontal = Dimens.SpaceLg, vertical = Dimens.SpaceMd),
+      )
+    }
+    filteredCurrencies.forEach { currency ->
       DropdownMenuItem(
         text = { CurrencyMenuItemLabel(currency) },
         leadingIcon = { CurrencyFlag(currency = currency, size = Dimens.CurrencyBadgeSize) },
         onClick = {
           onSelected(currency)
-          expanded = false
+          close()
         },
       )
     }
   }
+}
+
+/**
+ * The search box atop [CurrencySelectorChip]'s dropdown. Purely a text field: the matching it drives
+ * lives in [filterByQuery], so this composable only has to render [query] and report edits.
+ */
+@Composable
+private fun CurrencySearchField(
+  query: String,
+  onQueryChanged: (String) -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  OutlinedTextField(
+    value = query,
+    onValueChange = onQueryChanged,
+    modifier = modifier.fillMaxWidth(),
+    singleLine = true,
+    placeholder = { Text(stringResource(R.string.currency_search_placeholder)) },
+    leadingIcon = { Icon(imageVector = Icons.Filled.Search, contentDescription = null) },
+    trailingIcon = {
+      if (query.isNotEmpty()) {
+        IconButton(onClick = { onQueryChanged("") }) {
+          Icon(
+            imageVector = Icons.Filled.Close,
+            contentDescription = stringResource(R.string.currency_search_clear_content_description),
+          )
+        }
+      }
+    },
+  )
 }
 
 @Composable
