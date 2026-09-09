@@ -1,5 +1,6 @@
 package com.example.valtiva.di
 
+import com.example.valtiva.data.local.source.DataStoreThemeDataSource
 import com.example.valtiva.data.local.source.RoomConversionHistoryDataSource
 import com.example.valtiva.data.local.source.RoomExchangeRateDataSource
 import com.example.valtiva.data.local.source.RoomFavoriteExchangeDataSource
@@ -7,6 +8,7 @@ import com.example.valtiva.data.remote.source.FrankfurterExchangeRateDataSource
 import com.example.valtiva.data.source.LocalConversionHistoryDataSource
 import com.example.valtiva.data.source.LocalExchangeRateDataSource
 import com.example.valtiva.data.source.LocalFavoriteExchangeDataSource
+import com.example.valtiva.data.source.LocalThemeDataSource
 import com.example.valtiva.data.source.RemoteExchangeRateDataSource
 import dagger.Binds
 import dagger.Module
@@ -45,4 +47,9 @@ abstract class DataSourceModule {
   abstract fun bindLocalConversionHistoryDataSource(
     implementation: RoomConversionHistoryDataSource,
   ): LocalConversionHistoryDataSource
+
+  @Binds
+  abstract fun bindLocalThemeDataSource(
+    implementation: DataStoreThemeDataSource,
+  ): LocalThemeDataSource
 }

@@ -35,3 +35,8 @@ complexity:
     # surface: splitting one readable function into two named ones should never trip a gate.
     # The public counts still apply.
     ignorePrivate: true
+    # UseCaseModule's count grows by exactly one @Provides per use case the domain gains; each is a
+    # one-line factory with no branching, so a higher count there reflects the app's feature count,
+    # not tangled logic. Splitting it into several DI modules would only obscure the one place all
+    # use cases are assembled.
+    thresholdInObjects: 20

@@ -3,12 +3,15 @@ package com.example.valtiva.di
 import com.example.valtiva.data.repository.ConversionHistoryRepositoryImpl
 import com.example.valtiva.data.repository.ExchangeRateRepositoryImpl
 import com.example.valtiva.data.repository.FavoriteExchangeRepositoryImpl
+import com.example.valtiva.data.repository.ThemeRepositoryImpl
 import com.example.valtiva.domain.repository.ConversionHistoryRepository
 import com.example.valtiva.domain.repository.ExchangeRateRepository
 import com.example.valtiva.domain.repository.FavoriteExchangeRepository
+import com.example.valtiva.domain.repository.ThemeRepository
 import com.example.valtiva.domain.usecase.ConvertCurrencyUseCase
 import com.example.valtiva.domain.usecase.GetConversionHistoryUseCase
 import com.example.valtiva.domain.usecase.GetFavoriteExchangesUseCase
+import com.example.valtiva.domain.usecase.GetThemeModeUseCase
 import com.example.valtiva.presentation.converter.ConverterHandoffPublisher
 import com.example.valtiva.presentation.converter.ConverterHandoffReceiver
 import dagger.hilt.android.testing.HiltAndroidRule
@@ -48,9 +51,11 @@ class HiltGraphTest {
   @Inject lateinit var exchangeRateRepositoryAgain: ExchangeRateRepository
   @Inject lateinit var favoriteExchangeRepository: FavoriteExchangeRepository
   @Inject lateinit var conversionHistoryRepository: ConversionHistoryRepository
+  @Inject lateinit var themeRepository: ThemeRepository
   @Inject lateinit var convertCurrency: ConvertCurrencyUseCase
   @Inject lateinit var getFavoriteExchanges: GetFavoriteExchangesUseCase
   @Inject lateinit var getConversionHistory: GetConversionHistoryUseCase
+  @Inject lateinit var getThemeMode: GetThemeModeUseCase
   @Inject lateinit var converterHandoffPublisher: ConverterHandoffPublisher
   @Inject lateinit var converterHandoffReceiver: ConverterHandoffReceiver
 
@@ -64,6 +69,7 @@ class HiltGraphTest {
     assertTrue(exchangeRateRepository is ExchangeRateRepositoryImpl)
     assertTrue(favoriteExchangeRepository is FavoriteExchangeRepositoryImpl)
     assertTrue(conversionHistoryRepository is ConversionHistoryRepositoryImpl)
+    assertTrue(themeRepository is ThemeRepositoryImpl)
   }
 
   @Test

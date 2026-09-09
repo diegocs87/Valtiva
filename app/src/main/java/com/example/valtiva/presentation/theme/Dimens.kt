@@ -26,4 +26,7 @@ object Dimens {
 
   val ActionButtonHeight = 48.dp
   val ActionButtonElevation = 3.dp
+
+  val SettingsIconContainerSize = 40.dp
+  val SettingsLogoSize = 96.dp
 }

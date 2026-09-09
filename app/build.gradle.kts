@@ -123,6 +123,9 @@ dependencies {
   implementation(libs.androidx.hilt.work)
   ksp(libs.androidx.hilt.compiler)
 
+  // DataStore (user preferences, e.g. theme)
+  implementation(libs.androidx.datastore.preferences)
+
   // Firebase (versions managed by the BoM)
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.analytics)
