@@ -56,11 +56,7 @@
     <string name="settings_logo_content_description">Valtiva</string>
     <string name="settings_tagline">Convierte. Compara. Confía.</string>
     <string name="settings_version">v1.0.0</string>
-    <string name="settings_info_dialog_dismiss">OK</string>
-    <string name="settings_info_placeholder_1">This option isn\'t wired up yet — check back in a future update.</string>
-    <string name="settings_info_placeholder_2">Nothing to show here yet. This is a placeholder for now.</string>
-    <string name="settings_info_placeholder_3">This screen is still a work in progress.</string>
-    <string name="settings_info_placeholder_4">More details will land here soon.</string>
+    <string name="settings_document_close_content_description">Cerrar</string>
     <string name="theme_option_light">Light</string>
     <string name="theme_option_dark">Dark</string>
     <string name="theme_option_system">System default</string>

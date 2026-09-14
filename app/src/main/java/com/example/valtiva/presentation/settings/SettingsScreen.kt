@@ -32,7 +32,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,8 +46,8 @@ import com.example.valtiva.R
 import com.example.valtiva.domain.model.ThemeMode
 import com.example.valtiva.presentation.settings.SettingsUiEvent.AboutRowClicked
 import com.example.valtiva.presentation.settings.SettingsUiEvent.DailyAutoRefreshToggled
-import com.example.valtiva.presentation.settings.SettingsUiEvent.InfoDialogDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.PrivacyPolicyRowClicked
+import com.example.valtiva.presentation.settings.SettingsUiEvent.SettingsDocumentDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeDialogDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeModeSelected
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeRowClicked
@@ -60,9 +59,9 @@ import com.example.valtiva.presentation.theme.ValtivaTheme
  * Renders [SettingsUiState] and turns user interaction into [SettingsUiEvent]s.
  *
  * Stateless by design, like [com.example.valtiva.presentation.favorites.FavoritesScreen]: every
- * value it shows comes from [state], every action it can trigger goes out through [onEvent]. Rows
- * that lead nowhere real yet (About Valtiva, Privacy Policy) show [SettingsInfoDialog]; the "Theme"
- * row is the one real preference here, and opens [ThemeModeDialog] instead.
+ * value it shows comes from [state], every action it can trigger goes out through [onEvent]. "About
+ * Valtiva" and "Privacy Policy" open [SettingsDocumentDialog] on their bundled copy; the "Theme" row
+ * is the one real preference here, and opens [ThemeModeDialog] instead.
  */
 @Composable
 fun SettingsScreen(
@@ -144,8 +143,8 @@ fun SettingsScreen(
     )
   }
 
-  state.infoDialog?.let { dialog ->
-    SettingsInfoDialog(dialog = dialog, onDismiss = { onEvent(InfoDialogDismissed) })
+  state.visibleDocument?.let { kind ->
+    SettingsDocumentDialog(kind = kind, onDismiss = { onEvent(SettingsDocumentDismissed) })
   }
 }
 
@@ -279,20 +278,6 @@ private fun SettingsFooter(modifier: Modifier = Modifier) {
       modifier = Modifier.padding(top = Dimens.SpaceSm),
     )
   }
-}
-
-@Composable
-private fun SettingsInfoDialog(dialog: SettingsInfoDialog, onDismiss: () -> Unit) {
-  AlertDialog(
-    onDismissRequest = onDismiss,
-    confirmButton = {
-      TextButton(onClick = onDismiss) {
-        Text(text = stringResource(R.string.settings_info_dialog_dismiss))
-      }
-    },
-    title = { Text(text = stringResource(dialog.titleRes)) },
-    text = { Text(text = stringResource(dialog.messageRes)) },
-  )
 }
 
 /**

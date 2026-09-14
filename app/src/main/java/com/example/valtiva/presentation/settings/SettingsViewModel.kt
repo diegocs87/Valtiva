@@ -1,16 +1,14 @@
 package com.example.valtiva.presentation.settings
 
-import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.valtiva.R
 import com.example.valtiva.domain.model.ThemeMode
 import com.example.valtiva.domain.usecase.GetThemeModeUseCase
 import com.example.valtiva.domain.usecase.SetThemeModeUseCase
 import com.example.valtiva.presentation.settings.SettingsUiEvent.AboutRowClicked
 import com.example.valtiva.presentation.settings.SettingsUiEvent.DailyAutoRefreshToggled
-import com.example.valtiva.presentation.settings.SettingsUiEvent.InfoDialogDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.PrivacyPolicyRowClicked
+import com.example.valtiva.presentation.settings.SettingsUiEvent.SettingsDocumentDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeDialogDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeModeSelected
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeRowClicked
@@ -23,26 +21,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Placeholder copy shown for a row with no real destination behind it yet.
- *
- * Stands in for the About screen and the Privacy Policy document until those are built;
- * [SettingsViewModel] picks one at random on every tap so the placeholder does not read as a single
- * hard-coded message.
- */
-private val PlaceholderMessages = listOf(
-  R.string.settings_info_placeholder_1,
-  R.string.settings_info_placeholder_2,
-  R.string.settings_info_placeholder_3,
-  R.string.settings_info_placeholder_4,
-)
-
-/**
  * Drives the settings screen.
  *
- * The theme use cases are the only real dependency: [dailyAutoRefreshEnabled] and the info dialogs
- * have no domain or data layer behind them yet, so those stay plain in-memory state, the same way
- * [com.example.valtiva.presentation.favorites.FavoritesViewModel] only depends on what the screen
- * genuinely observes or changes.
+ * The theme use cases are the only real dependency: [SettingsUiState.dailyAutoRefreshEnabled] and
+ * [SettingsUiState.visibleDocument] have no domain or data layer behind them — the former is not
+ * wired to a real refresh yet, and the latter only names which bundled, static document ([About
+ * Valtiva][SettingsDocumentKind.ABOUT] or [the privacy policy][SettingsDocumentKind.PRIVACY_POLICY])
+ * to show; its actual copy lives in [AboutValtivaBlocks]/[PrivacyPolicyBlocks], not behind a use
+ * case, since it ships with the app rather than coming from a repository. That keeps this ViewModel
+ * depending on exactly what [com.example.valtiva.presentation.favorites.FavoritesViewModel] depends
+ * on for its own screen: only what it genuinely observes or changes.
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -65,10 +53,10 @@ class SettingsViewModel @Inject constructor(
       is ThemeRowClicked -> _uiState.update { it.copy(themeDialogVisible = true) }
       is ThemeModeSelected -> selectThemeMode(event.mode)
       is ThemeDialogDismissed -> _uiState.update { it.copy(themeDialogVisible = false) }
-      is AboutRowClicked -> showInfoDialog(R.string.settings_about_title)
-      is PrivacyPolicyRowClicked -> showInfoDialog(R.string.settings_privacy_title)
+      is AboutRowClicked -> showDocument(SettingsDocumentKind.ABOUT)
+      is PrivacyPolicyRowClicked -> showDocument(SettingsDocumentKind.PRIVACY_POLICY)
       is DailyAutoRefreshToggled -> _uiState.update { it.copy(dailyAutoRefreshEnabled = event.enabled) }
-      is InfoDialogDismissed -> _uiState.update { it.copy(infoDialog = null) }
+      is SettingsDocumentDismissed -> _uiState.update { it.copy(visibleDocument = null) }
     }
   }
 
@@ -83,8 +71,7 @@ class SettingsViewModel @Inject constructor(
     viewModelScope.launch { setThemeMode(mode) }
   }
 
-  private fun showInfoDialog(@StringRes titleRes: Int) {
-    val dialog = SettingsInfoDialog(titleRes = titleRes, messageRes = PlaceholderMessages.random())
-    _uiState.update { it.copy(infoDialog = dialog) }
+  private fun showDocument(kind: SettingsDocumentKind) {
+    _uiState.update { it.copy(visibleDocument = kind) }
   }
 }

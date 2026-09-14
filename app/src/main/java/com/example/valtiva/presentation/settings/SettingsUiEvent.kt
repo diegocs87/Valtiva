@@ -20,15 +20,15 @@ sealed interface SettingsUiEvent {
   /** The user dismissed the theme submenu without picking anything new. */
   data object ThemeDialogDismissed : SettingsUiEvent
 
-  /** The user tapped the "About Valtiva" row. */
+  /** The user tapped the "About Valtiva" row, opening that document. */
   data object AboutRowClicked : SettingsUiEvent
 
-  /** The user tapped the "Privacy Policy" row. */
+  /** The user tapped the "Privacy Policy" row, opening that document. */
   data object PrivacyPolicyRowClicked : SettingsUiEvent
 
   /** The user toggled the daily automatic refresh switch. */
   data class DailyAutoRefreshToggled(val enabled: Boolean) : SettingsUiEvent
 
-  /** The user dismissed the placeholder info dialog. */
-  data object InfoDialogDismissed : SettingsUiEvent
+  /** The user dismissed the About/Privacy Policy document that was open. */
+  data object SettingsDocumentDismissed : SettingsUiEvent
 }

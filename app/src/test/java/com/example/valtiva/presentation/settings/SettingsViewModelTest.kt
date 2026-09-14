@@ -1,6 +1,5 @@
 package com.example.valtiva.presentation.settings
 
-import com.example.valtiva.R
 import com.example.valtiva.domain.model.ThemeMode
 import com.example.valtiva.domain.usecase.GetThemeModeUseCase
 import com.example.valtiva.domain.usecase.SetThemeModeUseCase
@@ -21,7 +20,7 @@ import org.junit.Test
 
 /**
  * Behavioural tests for the settings ViewModel: the theme mode stream emits, and the resulting
- * [SettingsUiState] is asserted. The daily-refresh switch and the info dialogs have no domain or
+ * [SettingsUiState] is asserted. The daily-refresh switch and the document dialogs have no domain or
  * data dependency, so those are asserted as plain in-memory state, the way
  * [com.example.valtiva.presentation.favorites.FavoritesViewModel] tests only mock what the ViewModel
  * genuinely depends on.
@@ -50,7 +49,7 @@ class SettingsViewModelTest {
     assertEquals(ThemeMode.SYSTEM, state.themeMode)
     assertFalse(state.themeDialogVisible)
     assertTrue(state.dailyAutoRefreshEnabled)
-    assertNull(state.infoDialog)
+    assertNull(state.visibleDocument)
   }
 
   @Test
@@ -105,37 +104,37 @@ class SettingsViewModelTest {
 
     val state = viewModel.uiState.value
     assertFalse(state.dailyAutoRefreshEnabled)
-    assertNull(state.infoDialog)
+    assertNull(state.visibleDocument)
   }
 
   @Test
-  fun `tapping About Valtiva shows a dialog titled About Valtiva`() = runTest {
+  fun `tapping About Valtiva opens the About document`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
     val viewModel = viewModel()
 
     viewModel.onEvent(SettingsUiEvent.AboutRowClicked)
 
-    assertEquals(R.string.settings_about_title, viewModel.uiState.value.infoDialog?.titleRes)
+    assertEquals(SettingsDocumentKind.ABOUT, viewModel.uiState.value.visibleDocument)
   }
 
   @Test
-  fun `tapping Privacy Policy shows a dialog titled Privacy Policy`() = runTest {
+  fun `tapping Privacy Policy opens the Privacy Policy document`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
     val viewModel = viewModel()
 
     viewModel.onEvent(SettingsUiEvent.PrivacyPolicyRowClicked)
 
-    assertEquals(R.string.settings_privacy_title, viewModel.uiState.value.infoDialog?.titleRes)
+    assertEquals(SettingsDocumentKind.PRIVACY_POLICY, viewModel.uiState.value.visibleDocument)
   }
 
   @Test
-  fun `dismissing the info dialog clears it`() = runTest {
+  fun `dismissing the document dialog clears it`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
     val viewModel = viewModel()
     viewModel.onEvent(SettingsUiEvent.AboutRowClicked)
 
-    viewModel.onEvent(SettingsUiEvent.InfoDialogDismissed)
+    viewModel.onEvent(SettingsUiEvent.SettingsDocumentDismissed)
 
-    assertNull(viewModel.uiState.value.infoDialog)
+    assertNull(viewModel.uiState.value.visibleDocument)
   }
 }
