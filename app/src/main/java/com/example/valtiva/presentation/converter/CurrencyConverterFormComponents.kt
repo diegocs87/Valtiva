@@ -132,7 +132,8 @@ fun CurrencySelectorChip(
 ) {
   var expanded by remember { mutableStateOf(false) }
   var query by remember { mutableStateOf("") }
-  val chipDescription = "$contentDescriptionLabel: ${selected?.code ?: "none selected"}"
+  val noneSelected = stringResource(R.string.currency_none_selected_content_description)
+  val chipDescription = "$contentDescriptionLabel: ${selected?.code ?: noneSelected}"
 
   fun close() {
     expanded = false

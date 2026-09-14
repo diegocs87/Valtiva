@@ -37,7 +37,7 @@ class CurrencyConverterScreenTest {
   fun initialState_showsForm() {
     setScreen(CurrencyConverterUiState(baseCurrency = usd))
 
-    composeTestRule.onNodeWithText("Currency converter").assertExists()
+    composeTestRule.onNodeWithText("Conversor de divisas").assertExists()
   }
 
   @Test
@@ -48,7 +48,7 @@ class CurrencyConverterScreenTest {
       onEvent = { lastEvent = it },
     )
 
-    composeTestRule.onNodeWithContentDescription("Amount").performTextInput("100")
+    composeTestRule.onNodeWithContentDescription("Monto").performTextInput("100")
 
     assert(lastEvent == CurrencyConverterUiEvent.AmountChanged("100"))
   }
@@ -61,7 +61,7 @@ class CurrencyConverterScreenTest {
       onEvent = { lastEvent = it },
     )
 
-    composeTestRule.onNodeWithText("Convert").performClick()
+    composeTestRule.onNodeWithText("Convertir").performClick()
 
     assert(lastEvent == CurrencyConverterUiEvent.ConvertClicked)
   }

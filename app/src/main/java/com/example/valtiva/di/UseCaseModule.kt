@@ -3,11 +3,14 @@ package com.example.valtiva.di
 import com.example.valtiva.domain.repository.ConversionHistoryRepository
 import com.example.valtiva.domain.repository.ExchangeRateRepository
 import com.example.valtiva.domain.repository.FavoriteExchangeRepository
+import com.example.valtiva.domain.repository.RatesRefreshSettingsRepository
 import com.example.valtiva.domain.repository.ThemeRepository
+import com.example.valtiva.domain.scheduler.RatesRefreshScheduler
 import com.example.valtiva.domain.service.CurrencyConversionService
 import com.example.valtiva.domain.usecase.AddFavoriteExchangeUseCase
 import com.example.valtiva.domain.usecase.ConvertCurrencyUseCase
 import com.example.valtiva.domain.usecase.GetConversionHistoryUseCase
+import com.example.valtiva.domain.usecase.GetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.GetFavoriteExchangesUseCase
 import com.example.valtiva.domain.usecase.GetHistoricalRatesUseCase
 import com.example.valtiva.domain.usecase.GetLatestRatesUseCase
@@ -15,7 +18,9 @@ import com.example.valtiva.domain.usecase.GetThemeModeUseCase
 import com.example.valtiva.domain.usecase.RefreshRatesUseCase
 import com.example.valtiva.domain.usecase.RemoveFavoriteExchangeUseCase
 import com.example.valtiva.domain.usecase.SaveConversionHistoryUseCase
+import com.example.valtiva.domain.usecase.SetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.SetThemeModeUseCase
+import com.example.valtiva.domain.usecase.SyncRatesRefreshSchedulingUseCase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -96,4 +101,24 @@ object UseCaseModule {
   fun provideSetThemeModeUseCase(
     themeRepository: ThemeRepository,
   ): SetThemeModeUseCase = SetThemeModeUseCase(themeRepository)
+
+  @Provides
+  fun provideGetDailyAutoRefreshEnabledUseCase(
+    ratesRefreshSettingsRepository: RatesRefreshSettingsRepository,
+  ): GetDailyAutoRefreshEnabledUseCase =
+    GetDailyAutoRefreshEnabledUseCase(ratesRefreshSettingsRepository)
+
+  @Provides
+  fun provideSetDailyAutoRefreshEnabledUseCase(
+    ratesRefreshSettingsRepository: RatesRefreshSettingsRepository,
+    ratesRefreshScheduler: RatesRefreshScheduler,
+  ): SetDailyAutoRefreshEnabledUseCase =
+    SetDailyAutoRefreshEnabledUseCase(ratesRefreshSettingsRepository, ratesRefreshScheduler)
+
+  @Provides
+  fun provideSyncRatesRefreshSchedulingUseCase(
+    ratesRefreshSettingsRepository: RatesRefreshSettingsRepository,
+    ratesRefreshScheduler: RatesRefreshScheduler,
+  ): SyncRatesRefreshSchedulingUseCase =
+    SyncRatesRefreshSchedulingUseCase(ratesRefreshSettingsRepository, ratesRefreshScheduler)
 }
