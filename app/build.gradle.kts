@@ -8,9 +8,10 @@ plugins {
   alias(libs.plugins.hilt)
   alias(libs.plugins.room)
   alias(libs.plugins.detekt)
-  // Apply these once google-services.json is added (Firebase project connected):
-  // alias(libs.plugins.google.services)
-  // alias(libs.plugins.firebase.crashlytics)
+  // The Firebase project is connected (app/google-services.json); Analytics and Crashlytics are
+  // wired in. Performance Monitoring is not part of this integration and stays commented out.
+  alias(libs.plugins.google.services)
+  alias(libs.plugins.firebase.crashlytics)
   // alias(libs.plugins.firebase.perf)
 }
 

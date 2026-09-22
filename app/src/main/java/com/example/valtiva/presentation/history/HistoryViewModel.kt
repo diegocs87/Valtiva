@@ -2,6 +2,9 @@ package com.example.valtiva.presentation.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
+import com.example.valtiva.diagnostics.CrashReporter
 import com.example.valtiva.domain.model.ConversionHistoryEntry
 import com.example.valtiva.domain.usecase.GetConversionHistoryUseCase
 import com.example.valtiva.presentation.converter.ConverterHandoffPublisher
@@ -28,6 +31,8 @@ import kotlinx.coroutines.launch
 class HistoryViewModel @Inject constructor(
   private val getConversionHistory: GetConversionHistoryUseCase,
   private val converterHandoff: ConverterHandoffPublisher,
+  private val analyticsTracker: AnalyticsTracker,
+  private val crashReporter: CrashReporter,
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(HistoryUiState())
@@ -36,6 +41,7 @@ class HistoryViewModel @Inject constructor(
   val uiState: StateFlow<HistoryUiState> = _uiState.asStateFlow()
 
   init {
+    analyticsTracker.trackEvent(AnalyticsEvent.HistoryOpened)
     observeHistory()
   }
 
@@ -49,13 +55,19 @@ class HistoryViewModel @Inject constructor(
   private fun observeHistory() {
     viewModelScope.launch {
       getConversionHistory()
-        .catch { _uiState.update { it.copy(isLoading = false, isUnavailable = true) } }
+        .catch { failure ->
+          crashReporter.recordException(failure)
+          _uiState.update { it.copy(isLoading = false, isUnavailable = true) }
+        }
         .collect { entries -> _uiState.update { it.copy(conversions = entries, isLoading = false) } }
     }
   }
 
   private fun setAsCurrent(entry: ConversionHistoryEntry) {
     val conversion = entry.conversion
+    analyticsTracker.trackEvent(
+      AnalyticsEvent.HistoryConversionSelected(conversion.source.currency.code, conversion.target.currency.code),
+    )
     converterHandoff.requestConversion(
       PendingConversion(
         amount = conversion.source.amount.toPlainString(),

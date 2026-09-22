@@ -1,6 +1,10 @@
 package com.example.valtiva.presentation.converter
 
 import androidx.lifecycle.SavedStateHandle
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
+import com.example.valtiva.analytics.CurrencyField
+import com.example.valtiva.diagnostics.CrashReporter
 import com.example.valtiva.domain.COP
 import com.example.valtiva.domain.EUR
 import com.example.valtiva.domain.RATE_DATE
@@ -27,6 +31,7 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
 import java.math.BigDecimal
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -62,6 +67,8 @@ class CurrencyConverterViewModelTest {
   private val removeFavoriteExchange = mockk<RemoveFavoriteExchangeUseCase>()
   private val saveConversionHistory = mockk<SaveConversionHistoryUseCase>()
   private val converterHandoffReceiver = mockk<ConverterHandoffReceiver>()
+  private val analyticsTracker = mockk<AnalyticsTracker>(relaxed = true)
+  private val crashReporter = mockk<CrashReporter>(relaxed = true)
 
   private val favorites = MutableStateFlow<List<FavoriteExchange>>(emptyList())
   private val pendingConversions = MutableSharedFlow<PendingConversion>()
@@ -100,6 +107,8 @@ class CurrencyConverterViewModelTest {
       removeFavoriteExchange = removeFavoriteExchange,
       saveConversionHistory = saveConversionHistory,
       converterHandoffReceiver = converterHandoffReceiver,
+      analyticsTracker = analyticsTracker,
+      crashReporter = crashReporter,
       savedStateHandle = savedStateHandle,
     )
 
@@ -665,5 +674,141 @@ class CurrencyConverterViewModelTest {
     viewModel(savedStateHandle)
 
     coVerify(exactly = 1) { getLatestRates(EUR) }
+  }
+
+  // -------------------------------------------------------------------------------------------
+  // Analytics and diagnostics
+  // -------------------------------------------------------------------------------------------
+
+  @Test
+  fun `reports a completed conversion with only the currencies involved`() = runTest {
+    convertedViewModel()
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.ConversionCompleted("USD", "COP")) }
+  }
+
+  @Test
+  fun `does not report a conversion that failed`() = runTest {
+    coEvery { convertCurrency(any(), any(), any()) } throws ExchangeRateUnavailableException(USD, COP)
+    val viewModel = viewModel()
+    viewModel.onEvent(CurrencyConverterUiEvent.AmountChanged("100"))
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ConvertClicked)
+
+    verify(exactly = 0) { analyticsTracker.trackEvent(any<AnalyticsEvent.ConversionCompleted>()) }
+  }
+
+  @Test
+  fun `reports which field a picked currency landed on`() = runTest {
+    val viewModel = viewModel()
+
+    viewModel.onEvent(CurrencyConverterUiEvent.BaseCurrencySelected(EUR))
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.CurrencySelected("EUR", CurrencyField.BASE)) }
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.CurrencySelected("COP", CurrencyField.TARGET)) }
+  }
+
+  @Test
+  fun `reports a swap with the currencies as they read afterwards`() = runTest {
+    val viewModel = convertedViewModel()
+
+    viewModel.onEvent(CurrencyConverterUiEvent.SwapCurrenciesClicked)
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.CurrenciesSwapped("COP", "USD")) }
+  }
+
+  @Test
+  fun `reports a favorite being saved`() = runTest {
+    val viewModel = viewModel()
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ToggleFavoriteClicked)
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.FavoriteAdded("USD", "COP")) }
+  }
+
+  @Test
+  fun `reports a favorite being unsaved`() = runTest {
+    favorites.value = listOf(FavoriteExchange(CurrencyPair(USD, COP)))
+    val viewModel = viewModel()
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ToggleFavoriteClicked)
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.FavoriteRemoved("USD", "COP")) }
+  }
+
+  @Test
+  fun `reports a favorite picked from the list`() = runTest {
+    val favorite = FavoriteExchange(CurrencyPair(EUR, COP))
+    favorites.value = listOf(favorite)
+    val viewModel = viewModel()
+
+    viewModel.onEvent(CurrencyConverterUiEvent.FavoriteSelected(favorite))
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.FavoriteSelected("EUR", "COP")) }
+  }
+
+  @Test
+  fun `reports a manual rates refresh once it succeeds`() = runTest {
+    val viewModel = viewModel()
+
+    viewModel.onEvent(CurrencyConverterUiEvent.RefreshRatesClicked)
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.RatesRefreshed("USD")) }
+  }
+
+  @Test
+  fun `does not report the initial load as a refresh`() = runTest {
+    viewModel()
+
+    verify(exactly = 0) { analyticsTracker.trackEvent(any<AnalyticsEvent.RatesRefreshed>()) }
+  }
+
+  @Test
+  fun `records a technical failure to record history without breaking the conversion on screen`() = runTest {
+    val failure = IllegalStateException("disk is full")
+    coEvery { saveConversionHistory(any()) } throws failure
+
+    convertedViewModel()
+
+    verify(exactly = 1) { crashReporter.recordException(failure) }
+  }
+
+  @Test
+  fun `records an unexpected conversion failure`() = runTest {
+    val failure = IllegalStateException("Room is on fire")
+    coEvery { convertCurrency(any(), any(), any()) } throws failure
+    val viewModel = viewModel()
+    viewModel.onEvent(CurrencyConverterUiEvent.AmountChanged("100"))
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ConvertClicked)
+
+    verify(exactly = 1) { crashReporter.recordException(failure) }
+  }
+
+  @Test
+  fun `does not record an expected domain failure as a crash`() = runTest {
+    coEvery { convertCurrency(any(), any(), any()) } throws ExchangeRateUnavailableException(USD, COP)
+    val viewModel = viewModel()
+    viewModel.onEvent(CurrencyConverterUiEvent.AmountChanged("100"))
+    viewModel.onEvent(CurrencyConverterUiEvent.TargetCurrencySelected(COP))
+
+    viewModel.onEvent(CurrencyConverterUiEvent.ConvertClicked)
+
+    verify(exactly = 0) { crashReporter.recordException(any()) }
+  }
+
+  @Test
+  fun `records the failure behind an unavailable favorites stream`() = runTest {
+    val failure = IllegalStateException("the favorites table is gone")
+    every { getFavoriteExchanges() } returns flow<List<FavoriteExchange>> { throw failure }
+
+    viewModel()
+
+    verify(exactly = 1) { crashReporter.recordException(failure) }
   }
 }

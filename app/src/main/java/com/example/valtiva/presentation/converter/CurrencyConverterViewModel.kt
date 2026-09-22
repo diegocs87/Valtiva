@@ -3,6 +3,10 @@ package com.example.valtiva.presentation.converter
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
+import com.example.valtiva.analytics.CurrencyField
+import com.example.valtiva.diagnostics.CrashReporter
 import com.example.valtiva.domain.exception.ExchangeRateSyncException
 import com.example.valtiva.domain.exception.ExchangeRateUnavailableException
 import com.example.valtiva.domain.model.ConversionResult
@@ -53,8 +57,9 @@ private const val KEY_TARGET_CURRENCY = "converter.targetCurrency"
  * should come from the cache. Those decisions live in the domain and the repositories, and this
  * class deliberately stays too thin to duplicate them.
  *
- * Only use cases are injected. There is no repository, no DAO and no Retrofit service in sight, so
- * the dependency arrow only ever points at the domain.
+ * Besides use cases, only [AnalyticsTracker] and [CrashReporter] are injected — both ports, neither
+ * a Firebase type. There is no repository, no DAO and no Retrofit service in sight, so the
+ * dependency arrow only ever points at the domain or at an infrastructure-agnostic boundary.
  *
  * ### Two jobs, one status
  * Rate loading and conversion are tracked by separate jobs so that starting one never silently
@@ -80,6 +85,8 @@ class CurrencyConverterViewModel @Inject constructor(
   private val removeFavoriteExchange: RemoveFavoriteExchangeUseCase,
   private val saveConversionHistory: SaveConversionHistoryUseCase,
   private val converterHandoffReceiver: ConverterHandoffReceiver,
+  private val analyticsTracker: AnalyticsTracker,
+  private val crashReporter: CrashReporter,
   private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -101,16 +108,31 @@ class CurrencyConverterViewModel @Inject constructor(
   fun onEvent(event: CurrencyConverterUiEvent) {
     when (event) {
       is AmountChanged -> onAmountChanged(event.amount)
-      is BaseCurrencySelected -> onCurrenciesSelected(event.currency, _uiState.value.targetCurrency)
-      is TargetCurrencySelected -> onCurrenciesSelected(_uiState.value.baseCurrency, event.currency)
-      is FavoriteSelected -> onCurrenciesSelected(event.favorite.pair.base, event.favorite.pair.quote)
+      is BaseCurrencySelected -> {
+        trackCurrencySelected(event.currency, CurrencyField.BASE)
+        onCurrenciesSelected(event.currency, _uiState.value.targetCurrency)
+      }
+      is TargetCurrencySelected -> {
+        trackCurrencySelected(event.currency, CurrencyField.TARGET)
+        onCurrenciesSelected(_uiState.value.baseCurrency, event.currency)
+      }
+      is FavoriteSelected -> {
+        analyticsTracker.trackEvent(
+          AnalyticsEvent.FavoriteSelected(event.favorite.pair.base.code, event.favorite.pair.quote.code),
+        )
+        onCurrenciesSelected(event.favorite.pair.base, event.favorite.pair.quote)
+      }
       is FavoriteRemoved -> removeFavorite(event.favorite)
       ConvertClicked -> convert()
       SwapCurrenciesClicked -> swapCurrencies()
       ToggleFavoriteClicked -> toggleFavorite()
-      RefreshRatesClicked -> loadRates { base -> refreshRates(base) }
+      RefreshRatesClicked -> loadRates(trackAsRefresh = true) { base -> refreshRates(base) }
       RetryClicked -> retry()
     }
+  }
+
+  private fun trackCurrencySelected(currency: Currency, field: CurrencyField) {
+    analyticsTracker.trackEvent(AnalyticsEvent.CurrencySelected(currency.code, field))
   }
 
   // ---------------------------------------------------------------------------------------------
@@ -134,6 +156,7 @@ class CurrencyConverterViewModel @Inject constructor(
     val state = _uiState.value
     // Nothing to swap with while the target is unset; silently ignoring beats inventing a failure.
     val target = state.targetCurrency ?: return
+    analyticsTracker.trackEvent(AnalyticsEvent.CurrenciesSwapped(target.code, state.baseCurrency.code))
     onCurrenciesSelected(base = target, target = state.baseCurrency)
   }
 
@@ -154,8 +177,12 @@ class CurrencyConverterViewModel @Inject constructor(
    *
    * The two callers differ only in that lambda: the initial load reads what is already known, while
    * the refresh forces a sync. Both go through a use case; neither knows what "sync" involves.
+   *
+   * [trackAsRefresh] reports [AnalyticsEvent.RatesRefreshed] once the sync succeeds. It is `true`
+   * only for the user-initiated "Refresh" action: the initial load on screen entry and a retry after
+   * a failure are not the deliberate refresh this event exists to measure.
    */
-  private fun loadRates(load: suspend (Currency) -> ExchangeRateSnapshot?) {
+  private fun loadRates(trackAsRefresh: Boolean = false, load: suspend (Currency) -> ExchangeRateSnapshot?) {
     ratesJob?.cancel()
     ratesJob = viewModelScope.launch {
       val base = _uiState.value.baseCurrency
@@ -169,6 +196,7 @@ class CurrencyConverterViewModel @Inject constructor(
           )
           else -> {
             _uiState.update { it.copy(availableCurrencies = snapshot.selectableCurrencies()) }
+            if (trackAsRefresh) analyticsTracker.trackEvent(AnalyticsEvent.RatesRefreshed(base.code))
             CurrencyConverterUiStatus.Idle
           }
         }
@@ -205,6 +233,9 @@ class CurrencyConverterViewModel @Inject constructor(
 
       val status = statusFor(RetryOperation.CONVERT) {
         val result = convertCurrency(amount, requested.baseCurrency, target)
+        analyticsTracker.trackEvent(
+          AnalyticsEvent.ConversionCompleted(result.source.currency.code, result.target.currency.code),
+        )
         recordHistory(result)
         CurrencyConverterUiStatus.Success(result)
       }
@@ -239,6 +270,7 @@ class CurrencyConverterViewModel @Inject constructor(
       throw cancellation
     } catch (failure: Exception) {
       // Best-effort: the conversion on screen is correct regardless of whether it got logged.
+      crashReporter.recordException(failure)
     }
   }
 
@@ -274,7 +306,10 @@ class CurrencyConverterViewModel @Inject constructor(
   private fun observeFavorites() {
     viewModelScope.launch {
       getFavoriteExchanges()
-        .catch { _uiState.update { it.copy(favoritesUnavailable = true) } }
+        .catch { failure ->
+          crashReporter.recordException(failure)
+          _uiState.update { it.copy(favoritesUnavailable = true) }
+        }
         // `catch` ends the stream, so there is no recovery to undo the flag afterwards.
         .collect { favorites -> _uiState.update { it.copy(favorites = favorites) } }
     }
@@ -288,6 +323,12 @@ class CurrencyConverterViewModel @Inject constructor(
     viewModelScope.launch {
       val status = statusFor(retry = null) {
         if (isFavorite) removeFavoriteExchange(pair) else addFavoriteExchange(pair)
+        val event = if (isFavorite) {
+          AnalyticsEvent.FavoriteRemoved(pair.base.code, pair.quote.code)
+        } else {
+          AnalyticsEvent.FavoriteAdded(pair.base.code, pair.quote.code)
+        }
+        analyticsTracker.trackEvent(event)
         // A favorite write is local and instant, and the list arrives through the flow, so there is
         // nothing to report: whatever the screen was showing stays.
         _uiState.value.status
@@ -300,6 +341,9 @@ class CurrencyConverterViewModel @Inject constructor(
     viewModelScope.launch {
       val status = statusFor(retry = null) {
         removeFavoriteExchange(favorite.pair)
+        analyticsTracker.trackEvent(
+          AnalyticsEvent.FavoriteRemoved(favorite.pair.base.code, favorite.pair.quote.code),
+        )
         _uiState.value.status
       }
       _uiState.update { it.copy(status = status) }
@@ -366,7 +410,11 @@ class CurrencyConverterViewModel @Inject constructor(
       throw cancellation
     } catch (failure: Exception) {
       // Deliberately broad: an unforeseen failure has to become a message on screen, never a crash.
-      CurrencyConverterUiStatus.Error(failure.toUiError(), retry)
+      val uiError = failure.toUiError()
+      // Only the failures this screen has no specific handling for are worth a report: the domain
+      // exceptions below are expected outcomes with their own UI treatment, not defects.
+      if (uiError is CurrencyConverterUiError.Unexpected) crashReporter.recordException(failure)
+      CurrencyConverterUiStatus.Error(uiError, retry)
     }
 
   /**

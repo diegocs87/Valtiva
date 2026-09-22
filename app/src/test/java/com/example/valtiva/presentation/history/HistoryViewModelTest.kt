@@ -1,5 +1,8 @@
 package com.example.valtiva.presentation.history
 
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
+import com.example.valtiva.diagnostics.CrashReporter
 import com.example.valtiva.domain.COP
 import com.example.valtiva.domain.RATE_DATE
 import com.example.valtiva.domain.USD
@@ -36,6 +39,8 @@ class HistoryViewModelTest {
 
   private val getConversionHistory = mockk<GetConversionHistoryUseCase>()
   private val converterHandoff = mockk<ConverterHandoffPublisher>(relaxed = true)
+  private val analyticsTracker = mockk<AnalyticsTracker>(relaxed = true)
+  private val crashReporter = mockk<CrashReporter>(relaxed = true)
   private val history = MutableSharedFlow<List<ConversionHistoryEntry>>(replay = 1)
 
   private val entry = ConversionHistoryEntry(
@@ -54,7 +59,8 @@ class HistoryViewModelTest {
     every { getConversionHistory() } returns history
   }
 
-  private fun viewModel() = HistoryViewModel(getConversionHistory, converterHandoff)
+  private fun viewModel() =
+    HistoryViewModel(getConversionHistory, converterHandoff, analyticsTracker, crashReporter)
 
   @Test
   fun `starts loading before the stream emits`() {
@@ -112,5 +118,34 @@ class HistoryViewModelTest {
     verify(exactly = 1) {
       converterHandoff.requestConversion(PendingConversion("100.00", USD, COP))
     }
+  }
+
+  @Test
+  fun `reports that the history screen was opened`() = runTest {
+    viewModel()
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.HistoryOpened) }
+  }
+
+  @Test
+  fun `reports a conversion picked from the history with only its currencies`() = runTest {
+    history.emit(listOf(entry))
+    val viewModel = viewModel()
+
+    viewModel.onEvent(HistoryUiEvent.ConversionSelected(entry))
+
+    verify(exactly = 1) {
+      analyticsTracker.trackEvent(AnalyticsEvent.HistoryConversionSelected("USD", "COP"))
+    }
+  }
+
+  @Test
+  fun `records the failure behind an unavailable history stream`() = runTest {
+    val failure = IllegalStateException("history table is gone")
+    every { getConversionHistory() } returns flow { throw failure }
+
+    viewModel()
+
+    verify(exactly = 1) { crashReporter.recordException(failure) }
   }
 }

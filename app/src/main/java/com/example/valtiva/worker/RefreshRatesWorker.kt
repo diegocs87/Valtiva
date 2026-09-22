@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
+import com.example.valtiva.diagnostics.CrashReporter
 import com.example.valtiva.domain.exception.ExchangeRateSyncException
 import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.usecase.RefreshRatesUseCase
@@ -31,22 +34,28 @@ constructor(
   @Assisted context: Context,
   @Assisted params: WorkerParameters,
   private val refreshRatesUseCase: RefreshRatesUseCase,
+  private val analyticsTracker: AnalyticsTracker,
+  private val crashReporter: CrashReporter,
 ) : CoroutineWorker(context, params) {
 
   @Suppress("TooGenericExceptionCaught", "SwallowedException")
   override suspend fun doWork(): Result =
     try {
       refreshRatesUseCase(BASE_CURRENCY)
+      analyticsTracker.trackEvent(AnalyticsEvent.DailyRefreshCompleted(BASE_CURRENCY.code))
       Result.success()
     } catch (retryable: ExchangeRateSyncException) {
       // The one failure the repository documents as worth retrying as-is: the source could not
-      // be reached this time, but a later attempt might succeed.
+      // be reached this time, but a later attempt might succeed. Not a defect, so no non-fatal
+      // report — just a breadcrumb in case a later, genuine failure needs the history.
+      crashReporter.log("Daily rates refresh could not sync; retrying.")
       Result.retry()
     } catch (cancellation: CancellationException) {
       throw cancellation
     } catch (nonRetryable: Exception) {
-      // Anything else is a failure retrying would not fix. WorkManager's Result carries no cause,
-      // and this project has no logging infrastructure to route it through instead.
+      // Anything else is a failure retrying would not fix, and worth a non-fatal report: WorkManager's
+      // Result carries no cause, so Crashlytics is the only place this exception is still visible.
+      crashReporter.recordException(nonRetryable)
       Result.failure()
     }
 
