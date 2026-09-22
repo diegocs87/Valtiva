@@ -3,7 +3,9 @@ package com.example.valtiva.presentation.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.valtiva.domain.model.ThemeMode
+import com.example.valtiva.domain.usecase.GetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.GetThemeModeUseCase
+import com.example.valtiva.domain.usecase.SetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.SetThemeModeUseCase
 import com.example.valtiva.presentation.settings.SettingsUiEvent.AboutRowClicked
 import com.example.valtiva.presentation.settings.SettingsUiEvent.DailyAutoRefreshToggled
@@ -23,9 +25,8 @@ import kotlinx.coroutines.launch
 /**
  * Drives the settings screen.
  *
- * The theme use cases are the only real dependency: [SettingsUiState.dailyAutoRefreshEnabled] and
- * [SettingsUiState.visibleDocument] have no domain or data layer behind them — the former is not
- * wired to a real refresh yet, and the latter only names which bundled, static document ([About
+ * The theme and daily-refresh use cases are its only real dependencies: [SettingsUiState.visibleDocument]
+ * has no domain or data layer behind it — it only names which bundled, static document ([About
  * Valtiva][SettingsDocumentKind.ABOUT] or [the privacy policy][SettingsDocumentKind.PRIVACY_POLICY])
  * to show; its actual copy lives in [AboutValtivaBlocks]/[PrivacyPolicyBlocks], not behind a use
  * case, since it ships with the app rather than coming from a repository. That keeps this ViewModel
@@ -36,6 +37,8 @@ import kotlinx.coroutines.launch
 class SettingsViewModel @Inject constructor(
   private val getThemeMode: GetThemeModeUseCase,
   private val setThemeMode: SetThemeModeUseCase,
+  private val getDailyAutoRefreshEnabled: GetDailyAutoRefreshEnabledUseCase,
+  private val setDailyAutoRefreshEnabled: SetDailyAutoRefreshEnabledUseCase,
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(SettingsUiState())
@@ -45,6 +48,7 @@ class SettingsViewModel @Inject constructor(
 
   init {
     observeThemeMode()
+    observeDailyAutoRefreshEnabled()
   }
 
   /** The screen's only way in. */
@@ -55,7 +59,7 @@ class SettingsViewModel @Inject constructor(
       is ThemeDialogDismissed -> _uiState.update { it.copy(themeDialogVisible = false) }
       is AboutRowClicked -> showDocument(SettingsDocumentKind.ABOUT)
       is PrivacyPolicyRowClicked -> showDocument(SettingsDocumentKind.PRIVACY_POLICY)
-      is DailyAutoRefreshToggled -> _uiState.update { it.copy(dailyAutoRefreshEnabled = event.enabled) }
+      is DailyAutoRefreshToggled -> toggleDailyAutoRefresh(event.enabled)
       is SettingsDocumentDismissed -> _uiState.update { it.copy(visibleDocument = null) }
     }
   }
@@ -66,9 +70,21 @@ class SettingsViewModel @Inject constructor(
     }
   }
 
+  private fun observeDailyAutoRefreshEnabled() {
+    viewModelScope.launch {
+      getDailyAutoRefreshEnabled().collect { enabled ->
+        _uiState.update { it.copy(dailyAutoRefreshEnabled = enabled) }
+      }
+    }
+  }
+
   private fun selectThemeMode(mode: ThemeMode) {
     _uiState.update { it.copy(themeDialogVisible = false) }
     viewModelScope.launch { setThemeMode(mode) }
+  }
+
+  private fun toggleDailyAutoRefresh(enabled: Boolean) {
+    viewModelScope.launch { setDailyAutoRefreshEnabled(enabled) }
   }
 
   private fun showDocument(kind: SettingsDocumentKind) {

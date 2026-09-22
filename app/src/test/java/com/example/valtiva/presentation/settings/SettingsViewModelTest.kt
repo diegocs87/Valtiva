@@ -1,7 +1,9 @@
 package com.example.valtiva.presentation.settings
 
 import com.example.valtiva.domain.model.ThemeMode
+import com.example.valtiva.domain.usecase.GetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.GetThemeModeUseCase
+import com.example.valtiva.domain.usecase.SetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.SetThemeModeUseCase
 import com.example.valtiva.presentation.MainDispatcherRule
 import io.mockk.coJustRun
@@ -19,9 +21,9 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Behavioural tests for the settings ViewModel: the theme mode stream emits, and the resulting
- * [SettingsUiState] is asserted. The daily-refresh switch and the document dialogs have no domain or
- * data dependency, so those are asserted as plain in-memory state, the way
+ * Behavioural tests for the settings ViewModel: the theme mode and daily-refresh preference streams
+ * emit, and the resulting [SettingsUiState] is asserted. The document dialogs have no domain or data
+ * dependency, so those are asserted as plain in-memory state, the way
  * [com.example.valtiva.presentation.favorites.FavoritesViewModel] tests only mock what the ViewModel
  * genuinely depends on.
  */
@@ -32,18 +34,31 @@ class SettingsViewModelTest {
 
   private val getThemeMode = mockk<GetThemeModeUseCase>()
   private val setThemeMode = mockk<SetThemeModeUseCase>()
+  private val getDailyAutoRefreshEnabled = mockk<GetDailyAutoRefreshEnabledUseCase>()
+  private val setDailyAutoRefreshEnabled = mockk<SetDailyAutoRefreshEnabledUseCase>()
   private val themeMode = MutableSharedFlow<ThemeMode>(replay = 1)
+  private val dailyAutoRefreshEnabled = MutableSharedFlow<Boolean>(replay = 1)
 
   @Before
   fun setUp() {
     every { getThemeMode() } returns themeMode
     coJustRun { setThemeMode(any()) }
+    every { getDailyAutoRefreshEnabled() } returns dailyAutoRefreshEnabled
+    coJustRun { setDailyAutoRefreshEnabled(any()) }
   }
 
-  private fun viewModel() = SettingsViewModel(getThemeMode, setThemeMode)
+  private fun viewModel() = SettingsViewModel(
+    getThemeMode,
+    setThemeMode,
+    getDailyAutoRefreshEnabled,
+    setDailyAutoRefreshEnabled,
+  )
 
   @Test
-  fun `starts with the system default theme, the daily refresh switch on, and no dialog showing`() {
+  fun `starts with the system default theme, the daily refresh switch on, and no dialog showing`() = runTest {
+    themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
+
     val state = viewModel().uiState.value
 
     assertEquals(ThemeMode.SYSTEM, state.themeMode)
@@ -55,6 +70,7 @@ class SettingsViewModelTest {
   @Test
   fun `publishes the theme mode the stream emits`() = runTest {
     themeMode.emit(ThemeMode.DARK)
+    dailyAutoRefreshEnabled.emit(true)
 
     val state = viewModel().uiState.value
 
@@ -64,6 +80,7 @@ class SettingsViewModelTest {
   @Test
   fun `tapping the theme row opens its submenu`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
 
     val viewModel = viewModel()
     viewModel.onEvent(SettingsUiEvent.ThemeRowClicked)
@@ -74,6 +91,7 @@ class SettingsViewModelTest {
   @Test
   fun `selecting a theme mode persists it and closes the submenu`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
     val viewModel = viewModel()
     viewModel.onEvent(SettingsUiEvent.ThemeRowClicked)
 
@@ -86,6 +104,7 @@ class SettingsViewModelTest {
   @Test
   fun `dismissing the submenu closes it without persisting anything`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
     val viewModel = viewModel()
     viewModel.onEvent(SettingsUiEvent.ThemeRowClicked)
 
@@ -96,20 +115,43 @@ class SettingsViewModelTest {
   }
 
   @Test
-  fun `toggling daily refresh flips only that flag`() = runTest {
+  fun `publishes the daily refresh preference the stream emits`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(false)
+
+    val state = viewModel().uiState.value
+
+    assertFalse(state.dailyAutoRefreshEnabled)
+  }
+
+  @Test
+  fun `toggling daily refresh off persists the change and does not touch the theme`() = runTest {
+    themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
     val viewModel = viewModel()
 
     viewModel.onEvent(SettingsUiEvent.DailyAutoRefreshToggled(false))
 
-    val state = viewModel.uiState.value
-    assertFalse(state.dailyAutoRefreshEnabled)
-    assertNull(state.visibleDocument)
+    coVerify(exactly = 1) { setDailyAutoRefreshEnabled(false) }
+    assertEquals(ThemeMode.SYSTEM, viewModel.uiState.value.themeMode)
+    assertNull(viewModel.uiState.value.visibleDocument)
+  }
+
+  @Test
+  fun `toggling daily refresh on persists the change`() = runTest {
+    themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(false)
+    val viewModel = viewModel()
+
+    viewModel.onEvent(SettingsUiEvent.DailyAutoRefreshToggled(true))
+
+    coVerify(exactly = 1) { setDailyAutoRefreshEnabled(true) }
   }
 
   @Test
   fun `tapping About Valtiva opens the About document`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
     val viewModel = viewModel()
 
     viewModel.onEvent(SettingsUiEvent.AboutRowClicked)
@@ -120,6 +162,7 @@ class SettingsViewModelTest {
   @Test
   fun `tapping Privacy Policy opens the Privacy Policy document`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
     val viewModel = viewModel()
 
     viewModel.onEvent(SettingsUiEvent.PrivacyPolicyRowClicked)
@@ -130,6 +173,7 @@ class SettingsViewModelTest {
   @Test
   fun `dismissing the document dialog clears it`() = runTest {
     themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
     val viewModel = viewModel()
     viewModel.onEvent(SettingsUiEvent.AboutRowClicked)
 

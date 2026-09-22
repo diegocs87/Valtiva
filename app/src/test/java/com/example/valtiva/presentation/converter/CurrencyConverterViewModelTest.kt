@@ -5,6 +5,7 @@ import com.example.valtiva.domain.COP
 import com.example.valtiva.domain.EUR
 import com.example.valtiva.domain.RATE_DATE
 import com.example.valtiva.domain.USD
+import com.example.valtiva.domain.XAU
 import com.example.valtiva.domain.exception.ExchangeRateSyncException
 import com.example.valtiva.domain.exception.ExchangeRateUnavailableException
 import com.example.valtiva.domain.model.ConversionResult
@@ -137,6 +138,17 @@ class CurrencyConverterViewModelTest {
 
     assertEquals(listOf(COP, EUR, USD), state.availableCurrencies)
     assertEquals(CurrencyConverterUiStatus.Idle, state.status)
+  }
+
+  @Test
+  fun `drops a quote no flag can be derived for from the offered currencies`() = runTest {
+    coEvery { getLatestRates(USD) } returns usdSnapshot.copy(
+      rates = usdSnapshot.rates + (XAU to BigDecimal("0.00047")),
+    )
+
+    val state = viewModel().uiState.value
+
+    assertEquals(listOf(COP, EUR, USD), state.availableCurrencies)
   }
 
   @Test

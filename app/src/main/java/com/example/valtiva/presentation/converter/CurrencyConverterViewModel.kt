@@ -182,9 +182,13 @@ class CurrencyConverterViewModel @Inject constructor(
    * currencies a conversion from this base can produce, and the base belongs in the list too since
    * the snapshot never publishes a rate for itself. Sorted by code because a picker needs an order
    * and the domain has no opinion about one.
+   *
+   * Entries [flagEmoji] can't derive a flag for — ISO 4217's `X`-series non-country codes such as
+   * `XAU` or `XDR`, which the provider does publish rates for — are dropped: a picker row with a
+   * placeholder globe instead of a flag reads as broken, and the app has no country to show for them.
    */
   private fun ExchangeRateSnapshot.selectableCurrencies(): List<Currency> =
-    (rates.keys + baseCurrency).sortedBy { it.code }
+    (rates.keys + baseCurrency).filter { it.flagEmoji() != null }.sortedBy { it.code }
 
   // ---------------------------------------------------------------------------------------------
   // Conversion

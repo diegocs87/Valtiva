@@ -28,18 +28,23 @@ class FrankfurterExchangeRateDataSource @Inject constructor(
     fetch(baseCurrency) { api.getHistoricalRates(base = baseCurrency.code, date = date.toString()) }
 
   /**
-   * Every way the provider interaction can fail — transport, HTTP status, malformed payload, a
-   * value the domain rejects — means the same thing to callers: the sync did not happen. They are
-   * all funnelled into [ExchangeRateSyncException] with the original failure as the cause, so no
-   * caller ever handles Retrofit or serialization types. Coroutine cancellation is not a failure
-   * and is rethrown untouched.
+   * Transport failures and HTTP status errors mean the sync did not happen and are funnelled into
+   * [ExchangeRateSyncException] with the original failure as the cause, so no caller ever handles
+   * Retrofit types. Coroutine cancellation is not a failure and is rethrown untouched.
+   *
+   * A single quote the domain rejects (e.g. a precious metal whose rate rounds to zero against a
+   * low-value base) does not fail the whole sync: the response covers every published currency, so
+   * one bad entry would otherwise mask a fully usable set of rates as a connectivity error. That
+   * entry is dropped instead.
    */
   @Suppress("TooGenericExceptionCaught")
   private suspend fun fetch(
     base: Currency,
     request: suspend () -> List<FrankfurterRateDto>,
   ): List<ExchangeRate> = try {
-    request().map { it.toDomain() }.filterNot { it.base == it.quote }
+    request()
+      .mapNotNull { dto -> runCatching { dto.toDomain() }.getOrNull() }
+      .filterNot { it.base == it.quote }
   } catch (cancellation: CancellationException) {
     throw cancellation
   } catch (failure: Exception) {

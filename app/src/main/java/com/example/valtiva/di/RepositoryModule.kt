@@ -3,10 +3,12 @@ package com.example.valtiva.di
 import com.example.valtiva.data.repository.ConversionHistoryRepositoryImpl
 import com.example.valtiva.data.repository.ExchangeRateRepositoryImpl
 import com.example.valtiva.data.repository.FavoriteExchangeRepositoryImpl
+import com.example.valtiva.data.repository.RatesRefreshSettingsRepositoryImpl
 import com.example.valtiva.data.repository.ThemeRepositoryImpl
 import com.example.valtiva.domain.repository.ConversionHistoryRepository
 import com.example.valtiva.domain.repository.ExchangeRateRepository
 import com.example.valtiva.domain.repository.FavoriteExchangeRepository
+import com.example.valtiva.domain.repository.RatesRefreshSettingsRepository
 import com.example.valtiva.domain.repository.ThemeRepository
 import dagger.Binds
 import dagger.Module
@@ -51,6 +53,11 @@ abstract class RepositoryModule {
   abstract fun bindThemeRepository(
     implementation: ThemeRepositoryImpl,
   ): ThemeRepository
+
+  @Binds
+  abstract fun bindRatesRefreshSettingsRepository(
+    implementation: RatesRefreshSettingsRepositoryImpl,
+  ): RatesRefreshSettingsRepository
 
   companion object {
 

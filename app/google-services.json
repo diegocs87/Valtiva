@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "375569485471",
+    "project_id": "valtiva-4437b",
+    "storage_bucket": "valtiva-4437b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:375569485471:android:6d58254908c37f91d51caa",
+        "android_client_info": {
+          "package_name": "com.example.valtiva"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9_87pS7BO8q4lmictLGrIw1EePzznRGI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
