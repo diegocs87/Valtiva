@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -38,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +48,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -132,6 +139,11 @@ fun CurrencySelectorChip(
 ) {
   var expanded by remember { mutableStateOf(false) }
   var query by remember { mutableStateOf("") }
+  // The chip's own position on screen, so the menu below it never requests more height than
+  // actually fits underneath — otherwise DropdownMenu's positioning flips or clamps the whole
+  // thing away from the anchor when this chip sits low on the screen (e.g. the "receive" card).
+  var chipBottomDp by remember { mutableFloatStateOf(0f) }
+  val density = LocalDensity.current
   val noneSelected = stringResource(R.string.currency_none_selected_content_description)
   val chipDescription = "$contentDescriptionLabel: ${selected?.code ?: noneSelected}"
 
@@ -153,6 +165,9 @@ fun CurrencySelectorChip(
         contentDescription = chipDescription
         role = Role.DropdownList
       }
+      .onGloballyPositioned { coordinates ->
+        chipBottomDp = with(density) { coordinates.boundsInWindow().bottom.toDp().value }
+      }
       .padding(horizontal = Dimens.SpaceMd),
   ) {
     CurrencyFlag(currency = selected, size = Dimens.CurrencyFlagChipSize)
@@ -170,6 +185,10 @@ fun CurrencySelectorChip(
   }
 
   DropdownMenu(expanded = expanded, onDismissRequest = { close() }) {
+    // Computed once per currency list rather than on every keystroke: displayName() resolves
+    // through java.util.Currency, and re-running that for every row on every recomposition of the
+    // menu (which a search keystroke triggers) is wasted work once the list is already in hand.
+    val displayNames = remember(currencies) { currencies.associateWith { it.displayName() } }
     val filteredCurrencies = remember(currencies, query) { currencies.filterByQuery(query) }
 
     CurrencySearchField(
@@ -186,15 +205,45 @@ fun CurrencySelectorChip(
         modifier = Modifier.padding(horizontal = Dimens.SpaceLg, vertical = Dimens.SpaceMd),
       )
     }
-    filteredCurrencies.forEach { currency ->
-      DropdownMenuItem(
-        text = { CurrencyMenuItemLabel(currency) },
-        leadingIcon = { CurrencyFlag(currency = currency, size = Dimens.CurrencyBadgeSize) },
-        onClick = {
-          onSelected(currency)
-          close()
-        },
-      )
+    // A plain forEach here would lay out every currency the moment the menu opens, instead of
+    // just the handful actually on screen. LazyColumn keeps that cost proportional to what's
+    // visible, which is what makes a catalogue-sized list open instantly rather than janking.
+    //
+    // Both dimensions must be exact (Modifier.size), not heightIn(max=)/fillMaxWidth: DropdownMenu
+    // sizes its content with Modifier.width(IntrinsicSize.Max), which queries every child's
+    // intrinsic width *and* height unless that child's own modifier reports a fixed value without
+    // asking it. A non-exact size on either axis forwards that query into the LazyColumn's
+    // SubcomposeLayout, which cannot answer intrinsics and throws.
+    //
+    // The row cap is derived from the space actually left below THIS chip (screen height, minus
+    // where the chip itself sits, minus the search field above the list and a safety margin) —
+    // never a flat constant. A cap that ignores the chip's own position is why a chip lower on
+    // screen (the "receive" card's) had nowhere to fit that height below it, and DropdownMenu
+    // repositioned the whole menu away from the anchor instead of showing it right underneath, as
+    // intended — and, at the same fixed row count, a *higher* chip can be just as short of room,
+    // since the fit depends on where the anchor sits, not on how much screen exists in total.
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val availableBelowDp = screenHeightDp - chipBottomDp - Dimens.CurrencyMenuReservedHeaderHeight.value
+    val maxRowsFittingBelowChip = (availableBelowDp / Dimens.CurrencyMenuItemHeight.value)
+      .toInt()
+      .coerceIn(1, Dimens.CurrencyMenuMaxRowCount)
+    val visibleRows = filteredCurrencies.size.coerceAtMost(maxRowsFittingBelowChip)
+    LazyColumn(
+      modifier = Modifier.size(
+        width = Dimens.CurrencyMenuWidth,
+        height = Dimens.CurrencyMenuItemHeight * visibleRows,
+      ),
+    ) {
+      items(filteredCurrencies, key = { it.code }) { currency ->
+        DropdownMenuItem(
+          text = { CurrencyMenuItemLabel(currency, name = displayNames[currency] ?: currency.code) },
+          leadingIcon = { CurrencyFlag(currency = currency, size = Dimens.CurrencyBadgeSize) },
+          onClick = {
+            onSelected(currency)
+            close()
+          },
+        )
+      }
     }
   }
 }
@@ -230,8 +279,7 @@ private fun CurrencySearchField(
 }
 
 @Composable
-private fun CurrencyMenuItemLabel(currency: Currency, modifier: Modifier = Modifier) {
-  val name = currency.displayName()
+private fun CurrencyMenuItemLabel(currency: Currency, name: String, modifier: Modifier = Modifier) {
   Column(modifier = modifier) {
     Text(
       text = currency.code,
