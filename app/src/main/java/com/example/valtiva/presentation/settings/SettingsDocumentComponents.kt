@@ -1,14 +1,15 @@
 package com.example.valtiva.presentation.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -26,7 +27,6 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.valtiva.R
@@ -48,43 +48,48 @@ fun SettingsDocumentDialog(kind: SettingsDocumentKind, onDismiss: () -> Unit, mo
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
-    Surface(
-      shape = RoundedCornerShape(24.dp),
-      color = MaterialTheme.colorScheme.surface,
-      modifier = modifier
-        .fillMaxWidth()
-        .fillMaxHeight(DIALOG_HEIGHT_FRACTION)
-        .padding(Dimens.SpaceLg),
-    ) {
-      Column(modifier = Modifier.fillMaxSize().padding(Dimens.CardPadding)) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween,
-          modifier = Modifier.fillMaxWidth(),
-        ) {
-          Text(
-            text = stringResource(kind.titleRes()),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-          )
-          IconButton(onClick = onDismiss) {
-            Icon(
-              imageVector = Icons.Filled.Close,
-              contentDescription = stringResource(R.string.settings_document_close_content_description),
+    // Centered and capped: on a tablet the reader is a column of text, not a sheet of the window's
+    // full width, and the screen-wide Surface it replaces made lines far too long to follow.
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+      Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface,
+        modifier = modifier
+          .widthIn(max = Dimens.DialogMaxWidth)
+          .fillMaxWidth()
+          .fillMaxHeight(DIALOG_HEIGHT_FRACTION)
+          .padding(Dimens.SpaceLg),
+      ) {
+        Column(modifier = Modifier.fillMaxSize().padding(Dimens.CardPadding)) {
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+          ) {
+            Text(
+              text = stringResource(kind.titleRes()),
+              style = MaterialTheme.typography.titleLarge,
+              color = MaterialTheme.colorScheme.onSurface,
+              modifier = Modifier.weight(1f),
             )
+            IconButton(onClick = onDismiss) {
+              Icon(
+                imageVector = Icons.Filled.Close,
+                contentDescription = stringResource(R.string.settings_document_close_content_description),
+              )
+            }
           }
+          HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant,
+            modifier = Modifier.padding(vertical = Dimens.SpaceMd),
+          )
+          MarkdownDocument(
+            blocks = kind.blocks(),
+            modifier = Modifier
+              .weight(1f)
+              .verticalScroll(rememberScrollState()),
+          )
         }
-        HorizontalDivider(
-          color = MaterialTheme.colorScheme.outlineVariant,
-          modifier = Modifier.padding(vertical = Dimens.SpaceMd),
-        )
-        MarkdownDocument(
-          blocks = kind.blocks(),
-          modifier = Modifier
-            .weight(1f)
-            .verticalScroll(rememberScrollState()),
-        )
       }
     }
   }

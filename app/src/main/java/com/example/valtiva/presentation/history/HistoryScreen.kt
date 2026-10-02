@@ -36,6 +36,7 @@ import com.example.valtiva.domain.model.ConversionHistoryEntry
 import com.example.valtiva.domain.model.ConversionResult
 import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.model.Money
+import com.example.valtiva.presentation.common.ResponsiveScreenColumn
 import com.example.valtiva.presentation.converter.CurrencyFlag
 import com.example.valtiva.presentation.converter.toDisplayAmount
 import com.example.valtiva.presentation.history.HistoryUiEvent.ConversionSelected
@@ -58,14 +59,7 @@ fun HistoryScreen(
   onEvent: (HistoryUiEvent) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Column(
-    modifier = modifier
-      .fillMaxSize()
-      .background(MaterialTheme.colorScheme.background)
-      .verticalScroll(rememberScrollState())
-      .padding(Dimens.ScreenPadding),
-    verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXl),
-  ) {
+  ResponsiveScreenColumn(modifier = modifier) {
     Text(
       text = stringResource(R.string.history_title),
       style = MaterialTheme.typography.headlineSmall,
@@ -105,12 +99,13 @@ private fun HistoryEmptyState(modifier: Modifier = Modifier) {
       imageVector = Icons.Filled.History,
       contentDescription = null,
       tint = MaterialTheme.colorScheme.onSurfaceVariant,
-      modifier = Modifier.size(Dimens.IconSizeMedium),
+      modifier = Modifier.size(Dimens.EmptyStateIconSize),
     )
     Text(
       text = stringResource(R.string.history_empty_title),
       style = MaterialTheme.typography.titleMedium,
       color = MaterialTheme.colorScheme.onBackground,
+      textAlign = TextAlign.Center,
       modifier = Modifier.padding(top = Dimens.SpaceLg),
     )
     Text(
@@ -159,7 +154,7 @@ private fun ConversionHistoryCard(
 ) {
   val conversion = entry.conversion
   Card(
-    shape = RoundedCornerShape(16.dp),
+    shape = MaterialTheme.shapes.medium,
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     modifier = modifier.fillMaxWidth(),
   ) {
