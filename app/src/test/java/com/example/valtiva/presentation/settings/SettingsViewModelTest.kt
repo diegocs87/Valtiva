@@ -1,5 +1,7 @@
 package com.example.valtiva.presentation.settings
 
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
 import com.example.valtiva.domain.model.ThemeMode
 import com.example.valtiva.domain.usecase.GetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.GetThemeModeUseCase
@@ -10,6 +12,7 @@ import io.mockk.coJustRun
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -36,6 +39,7 @@ class SettingsViewModelTest {
   private val setThemeMode = mockk<SetThemeModeUseCase>()
   private val getDailyAutoRefreshEnabled = mockk<GetDailyAutoRefreshEnabledUseCase>()
   private val setDailyAutoRefreshEnabled = mockk<SetDailyAutoRefreshEnabledUseCase>()
+  private val analyticsTracker = mockk<AnalyticsTracker>(relaxed = true)
   private val themeMode = MutableSharedFlow<ThemeMode>(replay = 1)
   private val dailyAutoRefreshEnabled = MutableSharedFlow<Boolean>(replay = 1)
 
@@ -52,6 +56,7 @@ class SettingsViewModelTest {
     setThemeMode,
     getDailyAutoRefreshEnabled,
     setDailyAutoRefreshEnabled,
+    analyticsTracker,
   )
 
   @Test
@@ -180,5 +185,15 @@ class SettingsViewModelTest {
     viewModel.onEvent(SettingsUiEvent.SettingsDocumentDismissed)
 
     assertNull(viewModel.uiState.value.visibleDocument)
+  }
+
+  @Test
+  fun `reports that the settings screen was opened`() = runTest {
+    themeMode.emit(ThemeMode.SYSTEM)
+    dailyAutoRefreshEnabled.emit(true)
+
+    viewModel()
+
+    verify(exactly = 1) { analyticsTracker.trackEvent(AnalyticsEvent.SettingsOpened) }
   }
 }

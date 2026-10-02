@@ -2,6 +2,9 @@ package com.example.valtiva.presentation.favorites
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
+import com.example.valtiva.diagnostics.CrashReporter
 import com.example.valtiva.domain.model.FavoriteExchange
 import com.example.valtiva.domain.usecase.GetFavoriteExchangesUseCase
 import com.example.valtiva.domain.usecase.RemoveFavoriteExchangeUseCase
@@ -18,14 +21,18 @@ import kotlinx.coroutines.launch
 /**
  * Drives the favorites screen.
  *
- * Only use cases are injected, the same two [com.example.valtiva.presentation.converter.CurrencyConverterViewModel]
+ * The two use cases are the same [com.example.valtiva.presentation.converter.CurrencyConverterViewModel]
  * already depends on: this screen adds no favorite of its own, it only observes and removes them.
- * No new business rule, model or repository is introduced for it.
+ * No new business rule, model or repository is introduced for it. [AnalyticsTracker] and
+ * [CrashReporter] are the only other dependencies, and both are ports — neither pulls Firebase (or
+ * any other vendor) into this class.
  */
 @HiltViewModel
 class FavoritesViewModel @Inject constructor(
   private val getFavoriteExchanges: GetFavoriteExchangesUseCase,
   private val removeFavoriteExchange: RemoveFavoriteExchangeUseCase,
+  private val analyticsTracker: AnalyticsTracker,
+  private val crashReporter: CrashReporter,
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(FavoritesUiState())
@@ -53,12 +60,20 @@ class FavoritesViewModel @Inject constructor(
   private fun observeFavorites() {
     viewModelScope.launch {
       getFavoriteExchanges()
-        .catch { _uiState.update { it.copy(unavailable = true) } }
+        .catch { failure ->
+          crashReporter.recordException(failure)
+          _uiState.update { it.copy(unavailable = true) }
+        }
         .collect { favorites -> _uiState.update { it.copy(favorites = favorites) } }
     }
   }
 
   private fun removeFavorite(favorite: FavoriteExchange) {
-    viewModelScope.launch { removeFavoriteExchange(favorite.pair) }
+    viewModelScope.launch {
+      removeFavoriteExchange(favorite.pair)
+      analyticsTracker.trackEvent(
+        AnalyticsEvent.FavoriteRemoved(favorite.pair.base.code, favorite.pair.quote.code),
+      )
+    }
   }
 }

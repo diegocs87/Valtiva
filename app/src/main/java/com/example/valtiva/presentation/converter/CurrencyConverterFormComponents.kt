@@ -1,5 +1,9 @@
 package com.example.valtiva.presentation.converter
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,6 +15,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -25,8 +32,6 @@ import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -45,13 +50,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
+import android.view.Gravity
 import com.example.valtiva.R
 import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.presentation.theme.Dimens
@@ -114,7 +126,7 @@ fun AmountDisplay(amount: String?, modifier: Modifier = Modifier) {
  * Each entry in the dropdown pairs the code with [Currency.displayName], since a list of bare codes
  * is only readable to someone who already knows which one they want.
  *
- * The dropdown opens with a search field on top so a long catalogue stays usable: typing narrows
+ * The list opens as a panel from the top of the screen ([CurrencyTopSheet]) with a search field on top so a long catalogue stays usable: typing narrows
  * [currencies] to whatever [filterByQuery] keeps, by code (`COP`) or by name (`Colombian Peso`). The
  * query is local to this one dropdown instance — it is not hoisted, for the same reason [expanded]
  * is not: neither is state any other part of the screen needs to read or survive the popup closing,
@@ -169,31 +181,131 @@ fun CurrencySelectorChip(
     )
   }
 
-  DropdownMenu(expanded = expanded, onDismissRequest = { close() }) {
-    val filteredCurrencies = remember(currencies, query) { currencies.filterByQuery(query) }
-
-    CurrencySearchField(
+  if (expanded) {
+    CurrencyTopSheet(
+      currencies = currencies,
       query = query,
       onQueryChanged = { query = it },
-      modifier = Modifier.padding(horizontal = Dimens.SpaceMd, vertical = Dimens.SpaceXs),
+      onSelected = {
+        onSelected(it)
+        close()
+      },
+      onDismiss = { close() },
     )
+  }
+}
 
-    if (filteredCurrencies.isEmpty()) {
+/**
+ * The currency list as a panel that drops down from the very top of the screen, used by both the
+ * origin and the target chip.
+ *
+ * A [Dialog] rather than a `DropdownMenu`: a dropdown is positioned against its anchor chip, so how
+ * many rows fit depends on where the chip sits — the "receive" card's chip had room for barely a
+ * handful. A dialog window pinned to [Gravity.TOP] is independent of the anchor, so both chips get
+ * the same panel and roughly [Dimens.CurrencySheetMaxVisibleRows] rows. The row count is still
+ * capped by the screen height (short devices, landscape, keyboard-less split screen) so the panel
+ * never runs off the bottom. The window's own dim scrim and outside-tap dismissal come for free.
+ */
+@Composable
+private fun CurrencyTopSheet(
+  currencies: List<Currency>,
+  query: String,
+  onQueryChanged: (String) -> Unit,
+  onSelected: (Currency) -> Unit,
+  onDismiss: () -> Unit,
+) {
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+  ) {
+    (LocalView.current.parent as? DialogWindowProvider)?.window?.setGravity(Gravity.TOP)
+
+    // Starts hidden and flips on the first frame so the panel slides down instead of popping in.
+    val visibleState = remember { MutableTransitionState(false).apply { targetState = true } }
+    AnimatedVisibility(
+      visibleState = visibleState,
+      enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
+    ) {
+      // Same reasoning as before: names are resolved through java.util.Currency, so do it once per
+      // list rather than on every search keystroke.
+      val displayNames = remember(currencies) { currencies.associateWith { it.displayName() } }
+      val filteredCurrencies = remember(currencies, query) { currencies.filterByQuery(query) }
+
+      val screenHeightDp = LocalConfiguration.current.screenHeightDp
+      val availableForListDp = screenHeightDp - Dimens.CurrencySheetReservedHeight.value
+      val visibleRows = (availableForListDp / Dimens.CurrencySheetItemHeight.value)
+        .toInt()
+        .coerceIn(1, Dimens.CurrencySheetMaxVisibleRows)
+        .coerceAtMost(filteredCurrencies.size.coerceAtLeast(1))
+
+      Surface(
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+        shadowElevation = Dimens.ActionButtonElevation,
+        modifier = Modifier.fillMaxWidth(),
+      ) {
+        Column(
+          modifier = Modifier
+            .statusBarsPadding()
+            .padding(bottom = Dimens.SpaceMd),
+        ) {
+          CurrencySearchField(
+            query = query,
+            onQueryChanged = onQueryChanged,
+            modifier = Modifier.padding(horizontal = Dimens.SpaceLg, vertical = Dimens.SpaceSm),
+          )
+          if (filteredCurrencies.isEmpty()) {
+            Text(
+              text = stringResource(R.string.currency_search_no_results),
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(horizontal = Dimens.SpaceLg, vertical = Dimens.SpaceMd),
+            )
+          }
+          LazyColumn(
+            modifier = Modifier
+              .fillMaxWidth()
+              .height(Dimens.CurrencySheetItemHeight * visibleRows),
+          ) {
+            items(filteredCurrencies, key = { it.code }) { currency ->
+              CurrencySheetRow(
+                currency = currency,
+                name = displayNames[currency] ?: currency.code,
+                onClick = { onSelected(currency) },
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+private fun CurrencySheetRow(currency: Currency, name: String, onClick: () -> Unit) {
+  Row(
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceMd),
+    modifier = Modifier
+      .fillMaxWidth()
+      .height(Dimens.CurrencySheetItemHeight)
+      .clickable(onClick = onClick)
+      .padding(horizontal = Dimens.SpaceLg),
+  ) {
+    CurrencyFlag(currency = currency, size = Dimens.CurrencySheetFlagSize)
+    Text(
+      text = currency.code,
+      style = MaterialTheme.typography.titleSmall,
+      color = MaterialTheme.colorScheme.onSurface,
+    )
+    // Only worth showing when the name says more than the code already does.
+    if (name != currency.code) {
       Text(
-        text = stringResource(R.string.currency_search_no_results),
+        text = name,
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = Dimens.SpaceLg, vertical = Dimens.SpaceMd),
-      )
-    }
-    filteredCurrencies.forEach { currency ->
-      DropdownMenuItem(
-        text = { CurrencyMenuItemLabel(currency) },
-        leadingIcon = { CurrencyFlag(currency = currency, size = Dimens.CurrencyBadgeSize) },
-        onClick = {
-          onSelected(currency)
-          close()
-        },
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
       )
     }
   }
@@ -227,26 +339,6 @@ private fun CurrencySearchField(
       }
     },
   )
-}
-
-@Composable
-private fun CurrencyMenuItemLabel(currency: Currency, modifier: Modifier = Modifier) {
-  val name = currency.displayName()
-  Column(modifier = modifier) {
-    Text(
-      text = currency.code,
-      style = MaterialTheme.typography.titleSmall,
-      color = MaterialTheme.colorScheme.onSurface,
-    )
-    // Only worth a second line when the name says more than the code already does.
-    if (name != currency.code) {
-      Text(
-        text = name,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-    }
-  }
 }
 
 /** A circular action, visually anchored between the two currency sections it exchanges. */

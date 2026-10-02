@@ -29,4 +29,15 @@ object Dimens {
 
   val SettingsIconContainerSize = 40.dp
   val SettingsLogoSize = 96.dp
+
+  /** Rows the top-anchored currency panel aims to show at once (capped by the screen's height). */
+  const val CurrencySheetMaxVisibleRows = 15
+  val CurrencySheetItemHeight = 44.dp
+  val CurrencySheetFlagSize = 28.dp
+
+  /**
+   * Height the panel needs besides its list: status bar, search field, bottom padding, plus a
+   * margin so it never touches the bottom edge of the screen.
+   */
+  val CurrencySheetReservedHeight = 160.dp
 }

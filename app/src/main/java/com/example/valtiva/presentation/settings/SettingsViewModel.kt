@@ -2,6 +2,8 @@ package com.example.valtiva.presentation.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.valtiva.analytics.AnalyticsEvent
+import com.example.valtiva.analytics.AnalyticsTracker
 import com.example.valtiva.domain.model.ThemeMode
 import com.example.valtiva.domain.usecase.GetDailyAutoRefreshEnabledUseCase
 import com.example.valtiva.domain.usecase.GetThemeModeUseCase
@@ -29,9 +31,9 @@ import kotlinx.coroutines.launch
  * has no domain or data layer behind it — it only names which bundled, static document ([About
  * Valtiva][SettingsDocumentKind.ABOUT] or [the privacy policy][SettingsDocumentKind.PRIVACY_POLICY])
  * to show; its actual copy lives in [AboutValtivaBlocks]/[PrivacyPolicyBlocks], not behind a use
- * case, since it ships with the app rather than coming from a repository. That keeps this ViewModel
- * depending on exactly what [com.example.valtiva.presentation.favorites.FavoritesViewModel] depends
- * on for its own screen: only what it genuinely observes or changes.
+ * case, since it ships with the app rather than coming from a repository. [AnalyticsTracker] is the
+ * only other dependency, reporting that the screen was opened; there is nothing here for
+ * [com.example.valtiva.diagnostics.CrashReporter] to report, since nothing on this screen can fail.
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
@@ -39,6 +41,7 @@ class SettingsViewModel @Inject constructor(
   private val setThemeMode: SetThemeModeUseCase,
   private val getDailyAutoRefreshEnabled: GetDailyAutoRefreshEnabledUseCase,
   private val setDailyAutoRefreshEnabled: SetDailyAutoRefreshEnabledUseCase,
+  private val analyticsTracker: AnalyticsTracker,
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(SettingsUiState())
@@ -47,6 +50,7 @@ class SettingsViewModel @Inject constructor(
   val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
   init {
+    analyticsTracker.trackEvent(AnalyticsEvent.SettingsOpened)
     observeThemeMode()
     observeDailyAutoRefreshEnabled()
   }
