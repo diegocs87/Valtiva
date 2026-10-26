@@ -19,7 +19,7 @@ import kotlinx.serialization.Serializable
  * domain types is the mapper's job.
  */
 @Serializable
-data class FrankfurterRateDto(
+data class APIRateDto(
   val date: String,
   val base: String,
   val quote: String,

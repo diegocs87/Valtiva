@@ -55,8 +55,7 @@ fun ValtivaHomeScreen(modifier: Modifier = Modifier) {
   val pagerState = rememberPagerState { destinations.size }
   val scope = rememberCoroutineScope()
 
-  // Animated rather than instant, so a tap lands the user on the page with the same motion a swipe
-  // would have given them.
+
   val onDestinationSelected: (Int) -> Unit = { index ->
     scope.launch { pagerState.animateScrollToPage(index) }
   }

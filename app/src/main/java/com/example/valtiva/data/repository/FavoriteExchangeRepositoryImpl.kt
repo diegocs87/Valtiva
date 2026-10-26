@@ -7,12 +7,6 @@ import com.example.valtiva.domain.repository.FavoriteExchangeRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
-/**
- * Favorites are the user's own preferences: purely local, no remote source and no freshness rules,
- * so this repository is a thin pass-through over the local data source. That is intentional — the
- * value is the boundary (consumers keep depending on the domain contract, storage stays swappable),
- * not the logic.
- */
 class FavoriteExchangeRepositoryImpl @Inject constructor(
   private val localDataSource: LocalFavoriteExchangeDataSource,
 ) : FavoriteExchangeRepository {

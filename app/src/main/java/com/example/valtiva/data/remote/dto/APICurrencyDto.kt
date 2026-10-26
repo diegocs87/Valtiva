@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
  * ```
  */
 @Serializable
-data class FrankfurterCurrencyDto(
+data class APICurrencyDto(
   @SerialName("iso_code")
   val isoCode: String,
   val name: String,

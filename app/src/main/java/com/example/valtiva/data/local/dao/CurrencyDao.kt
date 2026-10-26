@@ -7,12 +7,6 @@ import androidx.room.Query
 import com.example.valtiva.data.local.entity.CurrencyEntity
 import kotlinx.coroutines.flow.Flow
 
-/**
- * Local access to the currency catalogue.
- *
- * Inserts use [OnConflictStrategy.REPLACE] so a refresh can correct a name or symbol that changed
- * upstream, keyed by the ISO code.
- */
 @Dao
 interface CurrencyDao {
 

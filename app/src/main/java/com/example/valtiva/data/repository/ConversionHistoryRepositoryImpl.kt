@@ -8,11 +8,6 @@ import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 
-/**
- * The history is purely local: no remote source, no freshness rules, so — like
- * [FavoriteExchangeRepositoryImpl] — this is a thin pass-through over the local data source. The
- * value is the boundary, not the logic.
- */
 class ConversionHistoryRepositoryImpl @Inject constructor(
   private val localDataSource: LocalConversionHistoryDataSource,
 ) : ConversionHistoryRepository {

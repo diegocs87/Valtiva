@@ -1,6 +1,6 @@
 package com.example.valtiva.data.remote.mapper
 
-import com.example.valtiva.data.remote.dto.FrankfurterRateDto
+import com.example.valtiva.data.remote.dto.APIRateDto
 import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.model.ExchangeRate
 import com.example.valtiva.domain.model.ExchangeRateSnapshot
@@ -13,7 +13,7 @@ import java.time.LocalDate
  * fails in [LocalDate.parse], and a non-positive rate fails in [ExchangeRate]. A bad payload has to
  * surface as an error rather than as a silently wrong rate.
  */
-fun FrankfurterRateDto.toDomain(): ExchangeRate = ExchangeRate(
+fun APIRateDto.toDomain(): ExchangeRate = ExchangeRate(
   base = Currency.of(base),
   quote = Currency.of(quote),
   rate = rate,
@@ -32,7 +32,7 @@ fun FrankfurterRateDto.toDomain(): ExchangeRate = ExchangeRate(
  * Entries where base and quote are the same currency are dropped: the API includes `USD -> USD = 1`
  * when no `quotes` filter is given, and a snapshot must not carry a rate for its own base.
  */
-fun List<FrankfurterRateDto>.toExchangeRateSnapshots(): List<ExchangeRateSnapshot> =
+fun List<APIRateDto>.toExchangeRateSnapshots(): List<ExchangeRateSnapshot> =
   map { it.toDomain() }
     .filterNot { it.base == it.quote }
     .groupBy { it.base to it.date }

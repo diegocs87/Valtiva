@@ -23,8 +23,12 @@ data class Money(
   val currency: Currency,
 ) {
   init {
+    validateMonetaryAmountIsPositive()
+  }
+
+  private fun validateMonetaryAmountIsPositive() {
     require(amount.signum() >= 0) {
       "Monetary amount must not be negative, but was $amount ${currency.code}."
-    }
+      }
   }
 }

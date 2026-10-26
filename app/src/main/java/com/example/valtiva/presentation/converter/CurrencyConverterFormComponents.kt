@@ -269,11 +269,22 @@ private fun CurrencyTopSheet(
               .statusBarsPadding()
               .padding(bottom = Dimens.SpaceMd),
           ) {
-            CurrencySearchField(
-              query = query,
-              onQueryChanged = onQueryChanged,
-              modifier = Modifier.padding(horizontal = Dimens.SpaceLg, vertical = Dimens.SpaceSm),
-            )
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              modifier = Modifier.padding(start = Dimens.SpaceLg, end = Dimens.SpaceSm, top = Dimens.SpaceSm, bottom = Dimens.SpaceSm),
+            ) {
+              CurrencySearchField(
+                query = query,
+                onQueryChanged = onQueryChanged,
+                modifier = Modifier.weight(1f),
+              )
+              IconButton(onClick = onDismiss) {
+                Icon(
+                  imageVector = Icons.Filled.Close,
+                  contentDescription = stringResource(R.string.currency_sheet_close_content_description),
+                )
+              }
+            }
             if (filteredCurrencies.isEmpty()) {
               Text(
                 text = stringResource(R.string.currency_search_no_results),
