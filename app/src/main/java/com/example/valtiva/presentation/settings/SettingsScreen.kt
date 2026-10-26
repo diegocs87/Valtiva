@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -51,6 +52,7 @@ import com.example.valtiva.presentation.settings.SettingsUiEvent.SettingsDocumen
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeDialogDismissed
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeModeSelected
 import com.example.valtiva.presentation.settings.SettingsUiEvent.ThemeRowClicked
+import com.example.valtiva.presentation.common.ResponsiveScreenColumn
 import com.example.valtiva.presentation.theme.Dimens
 import com.example.valtiva.presentation.theme.ValtivaColors
 import com.example.valtiva.presentation.theme.ValtivaTheme
@@ -69,14 +71,7 @@ fun SettingsScreen(
   onEvent: (SettingsUiEvent) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  Column(
-    modifier = modifier
-      .fillMaxSize()
-      .background(MaterialTheme.colorScheme.background)
-      .verticalScroll(rememberScrollState())
-      .padding(Dimens.ScreenPadding),
-    verticalArrangement = Arrangement.spacedBy(Dimens.SpaceXl),
-  ) {
+  ResponsiveScreenColumn(modifier = modifier) {
     SettingsHeader()
 
     SettingsSection(title = stringResource(R.string.settings_section_appearance)) {
@@ -153,7 +148,8 @@ private fun SettingsHeader(modifier: Modifier = Modifier) {
   Column(modifier = modifier.fillMaxWidth()) {
     Text(
       text = stringResource(R.string.settings_title),
-      style = MaterialTheme.typography.titleLarge,
+      // Same style as the other screens' titles; titleLarge is the 28sp money-figure style.
+      style = MaterialTheme.typography.headlineSmall,
       color = MaterialTheme.colorScheme.onBackground,
     )
     Text(
@@ -209,7 +205,8 @@ private fun SettingsOptionRow(
     verticalAlignment = Alignment.CenterVertically,
     modifier = modifier
       .fillMaxWidth()
-      .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+      .heightIn(min = Dimens.MinTouchTarget)
+      .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
       .padding(vertical = Dimens.SpaceSm),
   ) {
     Box(
@@ -296,7 +293,9 @@ private fun ThemeModeDialog(
     confirmButton = {},
     title = { Text(text = stringResource(R.string.settings_theme_title)) },
     text = {
-      Column(modifier = Modifier.selectableGroup()) {
+      // Scrollable so the three options stay reachable in landscape or at a large font scale,
+      // where the dialog is shorter than its content.
+      Column(modifier = Modifier.selectableGroup().verticalScroll(rememberScrollState())) {
         ThemeModeOption(
           label = stringResource(R.string.theme_option_light),
           icon = Icons.Filled.LightMode,
@@ -332,6 +331,7 @@ private fun ThemeModeOption(
     verticalAlignment = Alignment.CenterVertically,
     modifier = modifier
       .fillMaxWidth()
+      .heightIn(min = Dimens.MinTouchTarget)
       .selectable(selected = selected, onClick = onClick, role = Role.RadioButton)
       .padding(vertical = Dimens.SpaceSm),
   ) {

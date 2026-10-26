@@ -9,12 +9,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/**
- * [LocalRatesRefreshSettingsDataSource] backed by Preferences DataStore, sharing the same
- * `valtiva_preferences` file as [DataStoreThemeDataSource]. A missing value resolves to `true`,
- * matching [com.example.valtiva.presentation.settings.SettingsUiState]'s default so a first launch
- * needs no separate default anywhere else.
- */
 class DataStoreRatesRefreshSettingsDataSource @Inject constructor(
   private val dataStore: DataStore<Preferences>,
 ) : LocalRatesRefreshSettingsDataSource {

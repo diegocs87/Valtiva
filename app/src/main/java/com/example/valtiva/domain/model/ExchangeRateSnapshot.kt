@@ -3,6 +3,10 @@ package com.example.valtiva.domain.model
 import java.math.BigDecimal
 import java.time.LocalDate
 
+private const val RATES_SHOULD_BE_POSITIVE_MSG = "All rates in a snapshot must be strictly positive, but found "
+
+private const val IMPLICIT_BASE_RATE_ERROR_MSG = "the base is implicit and always worth one."
+
 /**
  * Every rate published for [baseCurrency] on [date].
  *
@@ -19,14 +23,7 @@ data class ExchangeRateSnapshot(
   val rates: Map<Currency, BigDecimal>,
 ) {
   init {
-    require(rates.values.all { it.signum() > 0 }) {
-      "All rates in a snapshot must be strictly positive, but found " +
-        "${rates.filterValues { it.signum() <= 0 }}."
-    }
-    require(baseCurrency !in rates) {
-      "A snapshot must not publish a rate for its own base currency (${baseCurrency.code}); " +
-        "the base is implicit and always worth one."
-    }
+    validatePositiveRatesAndBaseNotIncluded()
   }
 
   /**
@@ -36,5 +33,16 @@ data class ExchangeRateSnapshot(
   fun rateFor(quote: Currency): ExchangeRate? {
     val rate = if (quote == baseCurrency) BigDecimal.ONE else rates[quote]
     return rate?.let { ExchangeRate(baseCurrency, quote, it, date) }
+  }
+
+  private fun validatePositiveRatesAndBaseNotIncluded() {
+    require(rates.values.all { it.signum() > 0 }) {
+      RATES_SHOULD_BE_POSITIVE_MSG +
+              "${rates.filterValues { it.signum() <= 0 }}."
+    }
+    require(baseCurrency !in rates) {
+      "A snapshot must not publish a rate for its own base currency (${baseCurrency.code}); " +
+              IMPLICIT_BASE_RATE_ERROR_MSG
+    }
   }
 }

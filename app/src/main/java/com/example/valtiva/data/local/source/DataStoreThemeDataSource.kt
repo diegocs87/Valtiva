@@ -10,11 +10,6 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-/**
- * [LocalThemeDataSource] backed by Preferences DataStore. Stored as the enum's name rather than its
- * ordinal, so reordering [ThemeMode]'s entries later cannot silently reinterpret a saved preference.
- * A missing or corrupt value resolves to [ThemeMode.SYSTEM], the same default a first launch has.
- */
 class DataStoreThemeDataSource @Inject constructor(
   private val dataStore: DataStore<Preferences>,
 ) : LocalThemeDataSource {

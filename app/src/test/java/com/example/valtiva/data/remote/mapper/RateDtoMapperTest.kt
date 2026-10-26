@@ -1,6 +1,6 @@
 package com.example.valtiva.data.remote.mapper
 
-import com.example.valtiva.data.remote.dto.FrankfurterRateDto
+import com.example.valtiva.data.remote.dto.APIRateDto
 import com.example.valtiva.domain.COP
 import com.example.valtiva.domain.EUR
 import com.example.valtiva.domain.USD
@@ -19,7 +19,7 @@ class RateDtoMapperTest {
     base: String = "USD",
     quote: String = "COP",
     rate: String = "3980.25",
-  ) = FrankfurterRateDto(date, base, quote, BigDecimal(rate))
+  ) = APIRateDto(date, base, quote, BigDecimal(rate))
 
   @Test
   fun `maps a USD to COP rate into the domain`() {
@@ -132,6 +132,6 @@ class RateDtoMapperTest {
 
   @Test
   fun `maps an empty response to no snapshots`() {
-    assertTrue(emptyList<FrankfurterRateDto>().toExchangeRateSnapshots().isEmpty())
+    assertTrue(emptyList<APIRateDto>().toExchangeRateSnapshots().isEmpty())
   }
 }

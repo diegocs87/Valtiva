@@ -1,7 +1,7 @@
 package com.example.valtiva.data.remote.source
 
 import com.example.valtiva.data.remote.api.FrankfurterApi
-import com.example.valtiva.data.remote.dto.FrankfurterRateDto
+import com.example.valtiva.data.remote.dto.APIRateDto
 import com.example.valtiva.domain.COP
 import com.example.valtiva.domain.EUR
 import com.example.valtiva.domain.USD
@@ -28,8 +28,8 @@ class FrankfurterExchangeRateDataSourceTest {
   @Test
   fun `maps the provider payload into domain rates`() = runTest {
     coEvery { api.getLatestRates(base = "USD") } returns listOf(
-      FrankfurterRateDto("2026-08-17", "USD", "COP", BigDecimal("3123.53")),
-      FrankfurterRateDto("2026-08-15", "USD", "EUR", BigDecimal("0.86539")),
+      APIRateDto("2026-08-17", "USD", "COP", BigDecimal("3123.53")),
+      APIRateDto("2026-08-15", "USD", "EUR", BigDecimal("0.86539")),
     )
 
     val rates = dataSource.getLatestRates(USD)
@@ -44,8 +44,8 @@ class FrankfurterExchangeRateDataSourceTest {
   @Test
   fun `drops the self rate the provider includes`() = runTest {
     coEvery { api.getLatestRates(base = "USD") } returns listOf(
-      FrankfurterRateDto("2026-08-17", "USD", "USD", BigDecimal("1.0")),
-      FrankfurterRateDto("2026-08-17", "USD", "COP", BigDecimal("3123.53")),
+      APIRateDto("2026-08-17", "USD", "USD", BigDecimal("1.0")),
+      APIRateDto("2026-08-17", "USD", "COP", BigDecimal("3123.53")),
     )
 
     val rates = dataSource.getLatestRates(USD)
@@ -79,7 +79,7 @@ class FrankfurterExchangeRateDataSourceTest {
   fun `wraps an unusable payload into the domain sync exception`() {
     // A rate the domain rejects (zero) surfaces as a failed sync, never as a silent wrong value.
     coEvery { api.getLatestRates(base = "USD") } returns listOf(
-      FrankfurterRateDto("2026-08-17", "USD", "COP", BigDecimal.ZERO),
+      APIRateDto("2026-08-17", "USD", "COP", BigDecimal.ZERO),
     )
 
     val thrown = assertThrows(ExchangeRateSyncException::class.java) {

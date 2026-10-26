@@ -5,7 +5,6 @@ import com.example.valtiva.domain.model.Currency
 import com.example.valtiva.domain.model.ExchangeRate
 import com.example.valtiva.domain.model.ExchangeRateSnapshot
 
-/** Stored row to domain rate. A stored code that is not valid ISO 4217 fails in [Currency.of]. */
 fun ExchangeRateEntity.toDomain(): ExchangeRate = ExchangeRate(
   base = Currency.of(baseCurrency),
   quote = Currency.of(quoteCurrency),
@@ -13,7 +12,6 @@ fun ExchangeRateEntity.toDomain(): ExchangeRate = ExchangeRate(
   date = date,
 )
 
-/** Domain rate to stored row. Only the currency codes are persisted, never the display names. */
 fun ExchangeRate.toEntity(): ExchangeRateEntity = ExchangeRateEntity(
   baseCurrency = base.code,
   quoteCurrency = quote.code,
@@ -21,7 +19,6 @@ fun ExchangeRate.toEntity(): ExchangeRateEntity = ExchangeRateEntity(
   date = date,
 )
 
-/** Flattens a snapshot into the rows that represent it, one per quoted currency. */
 fun ExchangeRateSnapshot.toEntities(): List<ExchangeRateEntity> = rates.map { (quote, rate) ->
   ExchangeRateEntity(
     baseCurrency = baseCurrency.code,
@@ -31,13 +28,6 @@ fun ExchangeRateSnapshot.toEntities(): List<ExchangeRateEntity> = rates.map { (q
   )
 }
 
-/**
- * Rebuilds snapshots from stored rows, newest first.
- *
- * Grouping mirrors [com.example.valtiva.data.remote.mapper.toExchangeRateSnapshots]: rows are keyed
- * by base and date, so a query spanning several days still produces one snapshot per day instead of
- * silently mixing them.
- */
 fun List<ExchangeRateEntity>.toExchangeRateSnapshots(): List<ExchangeRateSnapshot> =
   map { it.toDomain() }
     .filterNot { it.base == it.quote }

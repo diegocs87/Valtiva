@@ -1,17 +1,11 @@
 package com.example.valtiva.presentation.favorites
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.valtiva.presentation.common.ResponsiveScreenColumn
 import com.example.valtiva.presentation.converter.FavoritesSection
 import com.example.valtiva.presentation.favorites.FavoritesUiEvent.FavoriteRemoved
-import com.example.valtiva.presentation.theme.Dimens
 import com.example.valtiva.presentation.theme.ValtivaTheme
 
 /**
@@ -35,17 +29,14 @@ fun FavoritesScreen(
   onEvent: (FavoritesUiEvent) -> Unit,
   modifier: Modifier = Modifier,
 ) {
-  FavoritesSection(
-    favorites = state.favorites,
-    unavailable = state.unavailable,
-    onFavoriteSelected = {},
-    onFavoriteRemoved = { onEvent(FavoriteRemoved(it)) },
-    modifier = modifier
-      .fillMaxSize()
-      .background(MaterialTheme.colorScheme.background)
-      .verticalScroll(rememberScrollState())
-      .padding(Dimens.ScreenPadding),
-  )
+  ResponsiveScreenColumn(modifier = modifier) {
+    FavoritesSection(
+      favorites = state.favorites,
+      unavailable = state.unavailable,
+      onFavoriteSelected = {},
+      onFavoriteRemoved = { onEvent(FavoriteRemoved(it)) },
+    )
+  }
 }
 
 @Preview(showBackground = true)

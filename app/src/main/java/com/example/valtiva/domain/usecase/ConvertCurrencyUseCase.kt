@@ -19,24 +19,19 @@ import java.math.BigDecimal
  * snapshots are stored is settled, since doing it wrong compounds rounding error.
  */
 class ConvertCurrencyUseCase(
-  private val exchangeRateRepository: ExchangeRateRepository,
-  private val conversionService: CurrencyConversionService,
+    private val exchangeRateRepository: ExchangeRateRepository,
+    private val conversionService: CurrencyConversionService,
 ) {
-
-  /**
-   * @throws IllegalArgumentException when [amount] is negative.
-   * @throws ExchangeRateUnavailableException when no rate is published for the requested pair.
-   */
-  suspend operator fun invoke(
-    amount: BigDecimal,
-    source: Currency,
-    target: Currency,
-  ): ConversionResult {
-    val money = Money(amount, source)
-    val snapshot = exchangeRateRepository.getLatestRates(source)
-      ?: throw ExchangeRateUnavailableException(source, target)
-    val rate = snapshot.rateFor(target)
-      ?: throw ExchangeRateUnavailableException(source, target)
-    return conversionService.convert(money, target, rate)
-  }
+    suspend operator fun invoke(
+        amount: BigDecimal,
+        source: Currency,
+        target: Currency,
+    ): ConversionResult {
+        val money = Money(amount, source)
+        val snapshot = exchangeRateRepository.getLatestRates(source)
+            ?: throw ExchangeRateUnavailableException(source, target)
+        val rate = snapshot.rateFor(target)
+            ?: throw ExchangeRateUnavailableException(source, target)
+        return conversionService.convert(money, target, rate)
+    }
 }

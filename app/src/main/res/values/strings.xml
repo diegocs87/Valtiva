@@ -11,6 +11,7 @@
     <string name="target_currency_placeholder">Seleccionar</string>
     <string name="currency_search_placeholder">Buscar por código o nombre</string>
     <string name="currency_search_clear_content_description">Borrar búsqueda</string>
+    <string name="currency_sheet_close_content_description">Cerrar lista de monedas</string>
     <string name="currency_search_no_results">No se encontraron monedas</string>
     <string name="currency_none_selected_content_description">ninguna seleccionada</string>
     <string name="swap_currencies_content_description">Invertir monedas</string>

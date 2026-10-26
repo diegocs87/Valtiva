@@ -1,6 +1,6 @@
 package com.example.valtiva.data.remote.mapper
 
-import com.example.valtiva.data.remote.dto.FrankfurterCurrencyDto
+import com.example.valtiva.data.remote.dto.APICurrencyDto
 import com.example.valtiva.domain.model.Currency
 
 /**
@@ -10,7 +10,7 @@ import com.example.valtiva.domain.model.Currency
  * of travelling further. A blank symbol is treated as absent: the API sends an empty string for
  * currencies without one, and the domain expresses "no symbol" as `null`.
  */
-fun FrankfurterCurrencyDto.toDomain(): Currency = Currency.of(
+fun APICurrencyDto.toDomain(): Currency = Currency.of(
   code = isoCode,
   name = name,
   symbol = symbol?.takeIf { it.isNotBlank() },

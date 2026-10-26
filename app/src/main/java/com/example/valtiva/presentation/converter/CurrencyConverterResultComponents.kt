@@ -1,13 +1,13 @@
 package com.example.valtiva.presentation.converter
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Star
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.example.valtiva.R
 import com.example.valtiva.domain.model.ConversionResult
 import com.example.valtiva.domain.model.FavoriteExchange
+import com.example.valtiva.presentation.common.inTextSize
 import com.example.valtiva.presentation.theme.Dimens
 
 /**
@@ -125,42 +126,50 @@ fun FavoriteExchangeItem(
 ) {
   Card(
     onClick = onClick,
-    shape = RoundedCornerShape(16.dp),
+    shape = MaterialTheme.shapes.medium,
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     modifier = modifier.fillMaxWidth(),
   ) {
-    Row(
-      verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier.padding(horizontal = Dimens.SpaceMd, vertical = Dimens.SpaceMd),
-    ) {
-      CurrencyFlag(currency = favorite.pair.base, size = Dimens.CurrencyBadgeSize)
-      Spacer(modifier = Modifier.size(Dimens.SpaceMd))
-      Column(modifier = Modifier.weight(1f)) {
-        Text(
-          text = "${favorite.pair.base.code} → ${favorite.pair.quote.code}",
-          style = MaterialTheme.typography.labelLarge,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
-        Text(
-          text = stringResource(R.string.favorite_hint),
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-      }
-      FavoriteRateSparkline()
-      Spacer(modifier = Modifier.size(Dimens.SpaceSm))
-      Icon(
-        imageVector = Icons.Filled.Star,
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.size(Dimens.IconSizeMedium),
-      )
-      val deleteDescription = stringResource(R.string.favorite_delete_content_description)
-      IconButton(
-        onClick = onRemove,
-        modifier = Modifier.semantics { contentDescription = deleteDescription },
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+      // The sparkline and the star are ornament; the pair and the remove button are the content.
+      // When the row is too tight for all of them it is the ornament that goes, not the text
+      // squeezed down to a sliver beside it.
+      val showOrnaments = maxWidth.inTextSize() >= Dimens.CompactRowWidth
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(horizontal = Dimens.SpaceMd, vertical = Dimens.SpaceMd),
       ) {
-        Icon(imageVector = Icons.Filled.Close, contentDescription = null)
+        CurrencyFlag(currency = favorite.pair.base, size = Dimens.CurrencyBadgeSize)
+        Spacer(modifier = Modifier.size(Dimens.SpaceMd))
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = "${favorite.pair.base.code} → ${favorite.pair.quote.code}",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
+          Text(
+            text = stringResource(R.string.favorite_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+          )
+        }
+        if (showOrnaments) {
+          FavoriteRateSparkline()
+          Spacer(modifier = Modifier.size(Dimens.SpaceSm))
+          Icon(
+            imageVector = Icons.Filled.Star,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(Dimens.IconSizeMedium),
+          )
+        }
+        val deleteDescription = stringResource(R.string.favorite_delete_content_description)
+        IconButton(
+          onClick = onRemove,
+          modifier = Modifier.semantics { contentDescription = deleteDescription },
+        ) {
+          Icon(imageVector = Icons.Filled.Close, contentDescription = null)
+        }
       }
     }
   }
