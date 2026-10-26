@@ -36,85 +36,91 @@ Gracias por utilizar Valtiva.
 internal val PrivacyPolicyMarkdown = """
 # Política de Privacidad
 
-**Última actualización:** septiembre de 2026
+**Última actualización:** octubre de 2026
 
-En Valtiva valoramos tu privacidad. Esta Política de Privacidad explica qué información puede recopilarse cuando utilizas la aplicación Valtiva, cómo se utiliza y qué opciones tienes respecto a dicha información.
+Esta Política de Privacidad describe cómo la aplicación Valtiva accede, trata y comparte información. Valtiva es una aplicación de conversión de divisas que permite consultar tasas de cambio, realizar conversiones, guardar pares favoritos y revisar un historial de conversiones.
 
-## 1. Sobre Valtiva
+## 1. Responsable y contacto
 
-Valtiva es una aplicación de conversión de divisas que permite consultar tasas de cambio y realizar conversiones entre diferentes monedas.
+* **Aplicación:** Valtiva
+* **Desarrollador:** PENDIENTE: nombre del desarrollador tal como figura en Google Play.
+* **Contacto de privacidad:** PENDIENTE: correo electrónico de contacto.
 
-Las tasas de cambio utilizadas por Valtiva son proporcionadas por servicios externos y se actualizan periódicamente. Valtiva no proporciona información financiera, asesoría de inversión ni servicios de cambio de divisas.
+## 2. Resumen
 
-## 2. Información que recopilamos
+* Valtiva no tiene cuentas de usuario ni inicio de sesión, y no solicita nombre, correo, teléfono, dirección, ubicación, contactos, fotos ni otros datos personales.
+* Tus preferencias, favoritos e historial se guardan únicamente en tu dispositivo.
+* La aplicación consulta un servicio externo de tasas de cambio sin enviarle datos personales, aunque ese servicio puede recibir tu dirección IP al conectarse.
+* Valtiva integra Google Firebase para análisis de uso, informes de fallos y medición de rendimiento. Estos servicios recopilan datos técnicos y de uso, y algunos identificadores asociados a la instalación.
 
-Valtiva está diseñada para funcionar sin requerir que el usuario cree una cuenta ni proporcione información personal como nombre, correo electrónico, dirección o número de teléfono.
+## 3. Datos que la aplicación trata directamente
 
-La aplicación puede almacenar localmente información necesaria para proporcionar sus funcionalidades, como:
+Estos datos se procesan y almacenan solo en tu dispositivo; la aplicación no los envía a un servidor propio.
 
-* Monedas seleccionadas.
-* Última conversión realizada.
-* Monedas favoritas.
-* Tasas de cambio almacenadas para permitir el funcionamiento de la aplicación y reducir solicitudes de red.
+* **Historial de conversiones:** importes introducidos, monedas de origen y destino, resultado, tasa aplicada, fecha de la tasa y fecha y hora de la conversión. Se usa para mostrar tu historial y repetir conversiones.
+* **Monedas favoritas:** pares de monedas guardados, para acceder rápido a tus conversiones habituales.
+* **Tasas de cambio y lista de monedas descargadas:** permiten funcionar sin conexión y reducir solicitudes de red.
+* **Preferencias:** tema de la aplicación y actualización automática diaria de tasas.
 
-Esta información se almacena en el dispositivo y se utiliza únicamente para proporcionar y mejorar la experiencia dentro de Valtiva.
-
-## 3. Datos de uso y diagnóstico
-
-Valtiva puede utilizar servicios de Google Firebase, incluyendo **Firebase Analytics** y **Firebase Crashlytics**, para comprender cómo se utiliza la aplicación, detectar errores y mejorar su estabilidad.
-
-Estos servicios pueden recopilar información técnica y de uso, que puede incluir datos como:
-
-* Información sobre el dispositivo.
-* Versión del sistema operativo.
-* Versión de la aplicación.
-* Información sobre errores y fallos.
-* Información relacionada con la interacción con determinadas funcionalidades de la aplicación.
-* Identificadores técnicos utilizados por estos servicios.
-
-Estos datos se utilizan con fines de análisis, diagnóstico y mejora de la aplicación.
-
-Valtiva no utiliza estos servicios para recopilar directamente información financiera personal, contraseñas o credenciales bancarias.
+La aplicación no accede a la ubicación, la cámara, el micrófono, los contactos ni los archivos del dispositivo.
 
 ## 4. Tasas de cambio
 
-Valtiva obtiene información sobre tasas de cambio desde servicios externos. Para obtener estas tasas, la aplicación puede realizar solicitudes de red a dichos servicios.
+Valtiva obtiene las tasas mediante solicitudes HTTPS a la API pública de Frankfurter (api.frankfurter.dev) al abrir la aplicación, al actualizar manualmente y, si lo tienes activado, una vez al día en segundo plano.
 
-Las tasas mostradas por Valtiva corresponden a información proporcionada por terceros y pueden no representar valores de mercado en tiempo real.
+Las solicitudes contienen solo códigos de moneda y fechas; no incluyen importes ni datos personales. Según la documentación pública de Frankfurter, ese servicio no recopila ni registra datos personales, direcciones IP ni URLs de solicitudes, y usa Cloudflare para caché y protección, que ofrece estadísticas de tráfico agregadas. Valtiva no controla ese servicio.
 
-Por este motivo, las conversiones realizadas en Valtiva deben considerarse únicamente como una referencia.
+Las tasas provienen de terceros y pueden no representar valores de mercado en tiempo real, por lo que las conversiones deben considerarse únicamente como una referencia. Valtiva no ofrece asesoría financiera ni servicios de cambio de divisas.
 
-## 5. Información almacenada en el dispositivo
+## 5. Servicios de terceros: Google Firebase
 
-Valtiva utiliza almacenamiento local para conservar determinadas preferencias y datos necesarios para proporcionar una experiencia más rápida y permitir determinadas funcionalidades cuando no existe conexión a Internet.
+Los siguientes SDK de Google Firebase recopilan datos que Google gestiona como proveedor de servicios; no son datos que Valtiva recopile por sí misma.
 
-La información almacenada localmente permanece en el dispositivo y puede eliminarse al borrar los datos de la aplicación o desinstalarla, dependiendo de la configuración del sistema operativo.
+### Firebase Analytics
 
-## 6. Servicios de terceros
+Se usa para comprender cómo se utiliza la aplicación y mejorarla. Valtiva envía eventos como conversión realizada, moneda seleccionada, monedas intercambiadas, favorito añadido, quitado o seleccionado, tasas actualizadas, historial abierto, ajustes abiertos y actualización diaria completada. Estos eventos solo incluyen códigos de moneda; nunca se envían importes ni resultados de conversiones.
 
-Valtiva puede utilizar servicios proporcionados por terceros para determinadas funcionalidades, incluyendo servicios de análisis, diagnóstico y obtención de tasas de cambio.
+Firebase Analytics también recopila automáticamente un identificador de instancia de la aplicación, eventos automáticos, información del dispositivo y de la versión de Android, idioma, versión de la aplicación y ubicación aproximada derivada de la dirección IP. La aplicación declara además el permiso de identificador de publicidad (AD_ID) incluido por Google Analytics, por lo que ese identificador puede recopilarse si está disponible. Valtiva no lo usa con fines publicitarios.
 
-Estos proveedores pueden procesar información de acuerdo con sus propias políticas de privacidad.
+### Firebase Crashlytics
 
-El uso de Valtiva implica la aceptación de que determinados datos técnicos necesarios para estos servicios puedan ser procesados por dichos proveedores.
+Se usa para detectar y corregir fallos. Recopila informes de fallos y errores con trazas de pila, tipo y mensaje de la excepción, marca de tiempo, versión de la aplicación, modelo y sistema del dispositivo, memoria y espacio en disco, si el dispositivo tiene root e identificadores de instalación y de sesión. Según Google, se conservan 90 días.
 
-## 7. Seguridad
+### Firebase Performance Monitoring
 
-Tomamos medidas razonables para proteger la información procesada por Valtiva. Sin embargo, ningún sistema de almacenamiento o transmisión de información a través de Internet puede garantizar una seguridad absoluta.
+Se usa para medir el rendimiento, por ejemplo los tiempos de arranque. Recopila el ID de instalación de Firebase, modelo y sistema del dispositivo, uso de memoria y CPU, operador y tipo de red, país derivado de la IP, idioma, versión de la aplicación y duración de trazas automáticas. Según Google, los datos asociados a la IP se conservan 30 días y los asociados a la instalación, 60 días.
 
-## 8. Privacidad de menores
+Google trata esta información conforme a su Política de Privacidad y a los términos de procesamiento de datos de Firebase. Valtiva no vende datos personales ni los comparte con terceros distintos de los indicados aquí.
 
-Valtiva no está dirigida específicamente a menores de edad y no solicita deliberadamente información personal de niños.
+## 6. Datos que Valtiva no recopila
 
-## 9. Cambios en esta política
+Valtiva no recopila ni solicita nombre, correo electrónico, teléfono, dirección, credenciales, información de pago o financiera personal, ubicación precisa, contactos, fotos, vídeos, audio, mensajes ni archivos. La aplicación no muestra publicidad.
 
-Esta Política de Privacidad puede actualizarse periódicamente para reflejar cambios en Valtiva, en los servicios utilizados o en los requisitos legales aplicables.
+## 7. Copias de seguridad de Android
 
-Cuando se realicen cambios relevantes, se actualizará la fecha de "Última actualización" indicada al comienzo de esta política.
+La aplicación permite las copias de seguridad automáticas de Android. Según la configuración de tu dispositivo y de tu cuenta de Google, el historial y los favoritos podrían incluirse en la copia de seguridad de Google y restaurarse en otro dispositivo. Puedes desactivarlas en los ajustes de Android.
 
-## 10. Contacto
+## 8. Seguridad
 
-Si tienes preguntas, comentarios o inquietudes relacionadas con esta Política de Privacidad o con el tratamiento de información en Valtiva, puedes comunicarte con nosotros a través del medio de contacto proporcionado en la aplicación o en su página oficial.
+Las comunicaciones con el servicio de tasas de cambio usan HTTPS y los SDK de Firebase transmiten sus datos con cifrado en tránsito. Los datos locales se guardan en el almacenamiento privado de la aplicación, protegido por el aislamiento de aplicaciones de Android; no se aplica cifrado adicional propio. Ningún sistema puede garantizar una seguridad absoluta.
+
+## 9. Conservación y eliminación
+
+* **Datos locales:** permanecen en tu dispositivo hasta que borres los datos de la aplicación desde los ajustes de Android o la desinstales. Los favoritos pueden quitarse individualmente; Valtiva no ofrece por ahora una opción dentro de la aplicación para borrar el historial.
+* **Datos de Firebase:** se conservan en los servidores de Google durante los periodos indicados en la sección 5. Valtiva no tiene cuentas ni identificador de usuario propio, por lo que no puede vincular esos datos a una persona concreta. Puedes escribir al contacto de la sección 1 para consultar o solicitar la eliminación de datos asociados a tu dispositivo, y se atenderá en la medida en que sea técnicamente posible.
+* **Cuentas:** Valtiva no permite crear cuentas, por lo que no existe un procedimiento de eliminación de cuenta.
+
+## 10. Tus derechos
+
+Según la legislación que te sea aplicable, puedes tener derecho a acceder, rectificar, suprimir u oponerte al tratamiento de tus datos personales. Para ejercerlos, usa el contacto de la sección 1.
+
+## 11. Privacidad de menores
+
+Valtiva no está dirigida a menores de edad y no solicita deliberadamente información personal de niños.
+
+## 12. Cambios en esta política
+
+Esta Política de Privacidad puede actualizarse para reflejar cambios en Valtiva, en los servicios utilizados o en los requisitos legales. La fecha de «Última actualización» indica la versión vigente.
 
 ---
 
